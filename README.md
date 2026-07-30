@@ -5,8 +5,8 @@ Expandable project skeleton for the interdisciplinary project on transformer-bas
 ## Repository structure
 
 - `data/` – datasets and raw assets
-- `src/predictive_code_complexity/` – package source code
-  - `data/` – dataset loading and preprocessing
+- `src/` package source code
+  - `dataloader/` – dataset loading and preprocessing
   - `models/` – model definitions and training logic
   - `evaluation/` – validation and analysis scripts
 - `tests/` – automated tests
