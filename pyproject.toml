@@ -4,7 +4,16 @@ version = "0.1.0"
 description = "Transformer-based estimation of code complexity from problem descriptions"
 readme = "README.md"
 requires-python = ">=3.10"
-dependencies = []
+## Runtime dependencies installed by `pip install -e .`
+# Add packages here, e.g. lizard used by the analyzer and common ML/data libs
+dependencies = [
+	"lizard>=1.20",
+	"numpy>=1.24",
+	"pandas>=1.5",
+	"scikit-learn>=1.2",
+	"tqdm>=4.64",
+    # "torch>=2.0,<3.0"
+]
 
 [project.optional-dependencies]
 dev = ["pytest>=8.0"]
