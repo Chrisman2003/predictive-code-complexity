@@ -4,7 +4,8 @@ version = "0.1.0"
 description = "Transformer-based estimation of code complexity from problem descriptions"
 readme = "README.md"
 requires-python = ">=3.10"
-## Runtime dependencies installed by `pip install -e .`
+
+# Runtime dependencies installed by `pip install -e .`
 # Add packages here, e.g. lizard used by the analyzer and common ML/data libs
 dependencies = [
 	"lizard>=1.20",
@@ -12,6 +13,7 @@ dependencies = [
 	"pandas>=1.5",
 	"scikit-learn>=1.2",
 	"tqdm>=4.64",
+	"scipy",
     # "torch>=2.0,<3.0"
 ]
 
@@ -24,3 +26,6 @@ testpaths = ["tests"]
 [build-system]
 requires = ["setuptools>=68"]
 build-backend = "setuptools.build_meta"
+
+[project.scripts]
+predictive-complexity = "src.cli::main"
