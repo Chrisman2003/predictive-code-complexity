@@ -14,11 +14,14 @@ Examples for Complexity Metrics (Interpretable):
 
 
 ## Dataloader: ##
+Responsibility: Executes Repository level ETL & Data Ingestion
+--> It serves as a Data Producer for the rest of all Consumer Model Pipelines
+
+Structure:
 1. config.py:           Central path configurations & benchmark registry
 2. fetch_repos.py:      Automated Git cloner/updater
 3. static_analysers.py: Code parser (SLOC, Cyclomatic, Halstead)
 4. build_dataset.py:    Pipeline orchestrator outputting data/processed/
-5. dataset.py           PyTorch Dataset loading from data/processed/
 
 Currently the Dataloader pipeline performs the following 3 Tasks:
 1. Data-loading: loading Git input sfiles
@@ -27,15 +30,16 @@ Currently the Dataloader pipeline performs the following 3 Tasks:
 
 
 ## Model Pipelines: ##
-1. Transformer Pipeline for MAP: Problem Description --> Complexity(Implementation Code) 
+1. Prediction Pipeline 
+MAP: Problem Description --> Complexity(Implementation Code) 
+Goal: Analyze Progression in Predictive Power 
+Linear/Ridge --> Random Forest / Gradient Boosting --> BERT + Regression --> LLM / Transformer + OLLAMA
+
 Training the weights for the model 
---> Collective Repository Training model​ -> Universal Features
---> Target Repository​ Training -> Repository-Specific Features
+--> Collective Repository Training model​ -> Universal Features [Train Pretrained-Encoder with new Head]
+--> Target Repository​ Training -> Repository-Specific Features [Finetune Full-Encoder]
 M_global --> M_local
 (Problem Description, Programming Model, Repository) --> Expected Complexity
-
-Research Goal: Analyze Progression in Predictive Power
-Linear/Ridge --> Random Forest / Gradient Boosting --> BERT + Regression --> LLM / Transformer + OLLAMA
 
 Stage 2.2 Focus: The model learns to read CODE to predict complexity
 X = item["source_code"] 
@@ -55,10 +59,42 @@ Model output [LOC]:
     3. OpenMP      94
     4. SYCL        72
 
-2. OLLAMA Pipeline [Pairwise Comparisons] for MAP: Problem Description --> Ranking(Complexity(Programming Paradigms))
+
+2. Ranking Pipeline 
+MAP: Problem Description --> Ranking(Complexity(Programming Paradigms))
+Goal: for an arbitrary problem description (with global and local context) produce a ranking on the Implementation Complexity across GPU Paradigms
+
+Utilize Pairwise Comparisons with OLLAMA
 --> HPC: CUDA, Kokkos, OPENCL
 --> General: Python, C++, C, Java, etc.
 --> Context: Static (Universal Information), Dynamic (Local Information to Repository / Task Description)
+Motivation for Prompting Pairwise Comparisons: 
+https://aclanthology.org/2024.findings-naacl.97.pdf
+https://dl.acm.org/doi/pdf/10.1145/3626772.3657813
 
-3. OLLAMA Pipeline for Partially Generating new Data for MAP: Problem Description --> Complexity(Implementation Code)
+[Processed Data / Raw Benchmark]
+               │
+               ▼
+┌──────────────────────────────────────────────────────────────────┐
+│                   pipeline.py (Orchestrator)                     │
+└──────┬─────────────┬─────────────┬─────────────┬───────────┬─────┘
+       │             │             │             │           │
+       ▼             ▼             ▼             ▼           ▼
+┌────────────┐ ┌───────────┐ ┌───────────┐ ┌───────────┐ ┌───────────┐
+│data_loader │ │ context_  │ │ prompts + │ │ ranking_  │ │evaluator  │
+│  .py       │ │ builder.py│ │ ollama_   │ │aggregator │ │  .py      │
+│            │ │           │ │ client.py │ │  .py      │ │           │
+└─────┬──────┘ └─────┬─────┘ └─────┬─────┘ └─────┬─────┘ └─────┬─────┘
+      │              │             │             │             │
+      ▼              ▼             ▼             ▼             ▼
+  Parses entries  Assembles    Executes      Aggregates    Computes 
+  and yields      Global/Local pairwise      pairs into    Kendall Tau
+  (P_A, P_B)      + RAG        LLM           Bradley-Terry & Spearman
+  pairs           preamble     inference     scores        vs SLOC
+
+
+
+3. Generative Pipeline 
+MAP: Problem Description --> Complexity(Implementation Code)
+Goal: Generating new Training Data / Context with OLLAMA Pipelines
 Improve Cross-Project predictive capacity

@@ -4,8 +4,7 @@ Handles cyclic/inconsistent preferences using Copeland's Method with Keener tie-
 """
 from typing import Dict, List, Tuple
 import numpy as np
-from models.ranking_pipeline.schema import AggregatedRanking, PairwisePrediction
-
+from src.models.ranking_pipeline.schema import AggregatedRanking, PairwisePrediction
 
 class RankingAggregator:
     """

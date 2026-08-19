@@ -8,7 +8,7 @@ import time
 import urllib.error
 import urllib.request
 from typing import Dict, Optional
-from models.ranking_pipeline.prompts import PromptFactory
+from src.models.ranking_pipeline.prompts import PromptFactory
 
 class OllamaClient:
     """
@@ -19,7 +19,7 @@ class OllamaClient:
         self,
         model_name: str = "qwen2.5-coder",
         host: str = "http://localhost:11434",
-        timeout: int = 60,
+        timeout: int = 180,
         max_retries: int = 3
     ):
         self.model_name = model_name
@@ -32,6 +32,7 @@ class OllamaClient:
         problem_description: str,
         paradigm_a: str,
         paradigm_b: str,
+        context_preamble: Optional[str] = None,
         few_shot_examples: Optional[list] = None
     ) -> Dict[str, str]:
         """
@@ -43,6 +44,7 @@ class OllamaClient:
             problem_description=problem_description,
             paradigm_a=paradigm_a,
             paradigm_b=paradigm_b,
+            context_preamble=context_preamble,
             few_shot_examples=few_shot_examples
         )
 
@@ -92,7 +94,9 @@ class OllamaClient:
             "format": "json",
             "options": {
                 "temperature": 0.0,  # Zero-temperature for maximum determinism
-                "top_p": 0.1
+                "top_p": 0.1,
+                "num_predictions": 100,
+                "num_ctx" : 4096,
             }
         }
 
