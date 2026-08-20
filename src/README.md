@@ -61,6 +61,9 @@ Model output [LOC]:
 
 
 2. Ranking Pipeline 
+PROBLEMS [FIX]: 
+- FEW-SHOT
+- REPOSITORY URL PARSING
 MAP: Problem Description --> Ranking(Complexity(Programming Paradigms))
 Goal: for an arbitrary problem description (with global and local context) produce a ranking on the Implementation Complexity across GPU Paradigms
 
