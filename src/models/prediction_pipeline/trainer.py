@@ -3,6 +3,7 @@ import torch
 from torch.utils.data import DataLoader
 from typing import Dict, Any, Tuple, Optional
 from src.models.prediction_pipeline.loss import CoralOrdinalLoss
+from tqdm.auto import tqdm
 
 class EarlyStopping:
     def __init__(self, patience: int = 12, delta: float = 1e-4):
@@ -61,7 +62,7 @@ class StoryPointTrainer:
                 param_group["initial_lr"] = param_group["lr"]
             param_group["lr"] = param_group["initial_lr"] * lr_factor
 
-    def _eval(self) -> Tuple[float, float]:
+    def _eval(self) -> Tuple[float, float]:        
         self.model.eval()
         total_loss = 0.0
         total_mae = 0.0
@@ -89,10 +90,18 @@ class StoryPointTrainer:
 
     def train(self) -> Dict[str, Any]:
         best_val_loss = float("inf")
+        best_val_mae = float("inf")
 
         for epoch in range(self.epochs):
             self.model.train()
             train_loss = 0.0
+            
+            progress_bar = tqdm(
+                self.train_loader,
+                desc=f"Epoch {epoch + 1}/{self.epochs}",
+                leave=True,
+                unit="batch"
+            )
 
             for batch in self.train_loader:
                 input_ids = batch["input_ids"].to(self.device)
@@ -108,16 +117,29 @@ class StoryPointTrainer:
                 
                 self.optimizer.step()
                 self._adjust_lr()
+                
+                batch_loss = loss.item()
                 train_loss += loss.item() * input_ids.size(0)
+                
+                # Update live stats on the progress bar
+                current_lr = self.optimizer.param_groups[0]["lr"]
+                progress_bar.set_postfix({
+                    "batch_loss": f"{batch_loss:.4f}",
+                    "lr": f"{current_lr:.2e}"
+                })
 
             train_loss /= len(self.train_loader.dataset)
             val_loss, val_mae = self._eval()
+            
+            # Print epoch summary below progress bar
+            print(f"    └─ [Summary] Train Loss: {train_loss:.4f} | Val Loss: {val_loss:.4f} | Val MAE: {val_mae:.4f}")
 
             if val_loss < best_val_loss:
                 best_val_loss = val_loss
+                best_val_mae = val_mae
 
             if self.early_stopping.check(val_loss):
                 print(f"Early stopping triggered at Epoch {epoch + 1}")
                 break
 
-        return {"best_val_loss": best_val_loss, "val_mae": val_mae}
+        return {"best_val_loss": best_val_loss, "val_mae": best_val_mae}

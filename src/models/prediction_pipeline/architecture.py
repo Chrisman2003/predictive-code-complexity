@@ -67,6 +67,7 @@ class TransformerStoryPointModel(nn.Module):
                         p.requires_grad = True
 
     def forward(self, input_ids: torch.Tensor, attention_mask: torch.Tensor) -> torch.Tensor:
+        # Tensor Shape: (batch_size, seq_length, hidden_dim)
         outputs = self.backbone(input_ids=input_ids, attention_mask=attention_mask)
         
         # Pool hidden states: last token for GPT models, EOS/mean for others
@@ -77,6 +78,27 @@ class TransformerStoryPointModel(nn.Module):
         else:
             pooled_output = outputs[0][:, 0, :]
 
+        logits = self.head(pooled_output)
+        return logits
+    
+    def forward(self, input_ids: torch.Tensor, attention_mask: torch.Tensor) -> torch.Tensor:
+        outputs = self.backbone(input_ids=input_ids, attention_mask=attention_mask)
+        # Safely extract hidden states whether it returns an object or a tuple
+        hidden_states = outputs.last_hidden_state if hasattr(outputs, "last_hidden_state") else outputs[0]
+        # Check the configuration to determine the architecture type
+        is_decoder = getattr(self.backbone.config, "is_decoder", False)
+
+        if is_decoder:
+            # DECODER POOLING (e.g., GPT-2): Extract the last non-padding token
+            sequence_lengths = attention_mask.sum(dim=1) - 1
+            batch_size = input_ids.shape[0]
+            # Use advanced indexing to grab the correct token for each sequence in the batch
+            pooled_output = hidden_states[torch.arange(batch_size, device=hidden_states.device), sequence_lengths]
+        else:
+            # ENCODER POOLING (e.g., BERT, RoBERTa): Extract the [CLS] token at index 0
+            pooled_output = hidden_states[:, 0, :]
+
+        # Pass the pooled representation into your ordinal regression head
         logits = self.head(pooled_output)
         return logits
 

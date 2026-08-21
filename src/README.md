@@ -59,6 +59,8 @@ Model output [LOC]:
     3. OpenMP      94
     4. SYCL        72
 
+--> TRAINING callable from both CLI and from notebook files
+
 
 2. Ranking Pipeline 
 PROBLEMS [FIX]: 
