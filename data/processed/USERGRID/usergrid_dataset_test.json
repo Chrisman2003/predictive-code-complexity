@@ -1,0 +1,202 @@
+[
+    {
+        "story": "Rationalize JMX Metrics in 2.0 branch\n\nMake same as 2.1 branch",
+        "points": 2.0
+    },
+    {
+        "story": "Cannot create collections due to new App Delete feature\n\nerror_description: \"Cannot restore. Deleted Application not found: 7a7624db-bc61-11e4-a2af-12b4f5e28868\"\u2028exception: \"org.apache.usergrid.persistence.exceptions.EntityNotFoundException\"\n\nseems like the app restore is intercepting the path that is used to create collections from the UI\n\nRequest URL:https://example.com/appservices/apigee-jwest/sandbox/?access_token=YWMtefpnELx7EeSlLXug...\n\nor the UI isn't right",
+        "points": 3.0
+    },
+    {
+        "story": "Investigate Serialization issue for Notifications",
+        "points": 3.0
+    },
+    {
+        "story": "Nested Arrays in documents result in infinite loop / stack overflow\n\nNeed to investigate and decide on an approach.  In addition, do we support arrays with elements of varying types?\n\n\tat org.apache.usergrid.persistence.model.entity.MapToEntityConverter.processListForField(MapToEntityConverter.java:148)",
+        "points": 1.0
+    },
+    {
+        "story": "Index Queue should not depend solely on AWS SQS \n\nIn the two-dot-o branch the faulty queue implementation has been replaced by a set of Queue interfaces and an AWS SQS implementation of those interfaces. \n\nUsergrid should not depend on a commercial service and the Usergrid Launcher should be able to run standalone and without external services.\n\nSo, what we need is a Queue implementation that we can embed in Usergrid for running JUnit tests that depend on the queue, for running the Usergrid Launcher and (ideally) one that can also be run remotely.\n\nApache Qpid seems to be a good candidate for our default queue implementation.",
+        "points": 3.0
+    },
+    {
+        "story": "SNS Queue Manager uses ARN to read instead of URL\n\nThere is a bug in org.apache.usergrid.persistence.queue.impl.SNSQueueManagerImpl which results in the ARN of the queue being used when the URL should be used.",
+        "points": 1.0
+    },
+    {
+        "story": "Cannot change custom entity name\n\nIf you have a custom entity and attempt to update the entity's name (via PUT), the system will accept the request and return success (200), but the name will remain unchanged.\n\neg. using ugc:\nugc create foo \"name: 'bar'\"\nugc update foo/bar \"name: 'baz'\"\n\n(Note: Referencing the entity in the PUT via UUID has the same effect.)",
+        "points": 3.0
+    },
+    {
+        "story": "Add Dead Letter Queue",
+        "points": 3.0
+    },
+    {
+        "story": "[SPIKE] Understand what remains and break up tasks for migrating properties from files on Tomcat to Org-level in the management app",
+        "points": 3.0
+    },
+    {
+        "story": "Change the path for getting status for Import job",
+        "points": 2.0
+    },
+    {
+        "story": "Added rest tests for system/* endpoints\n\nCurrently there are no rest tests that check that the system/database/setup completed correctly. We use test utils that automatically call the service endpoints. We should implement a way to disable/move it so that we can check that the system is being properly initialized using rest tier calls.",
+        "points": 5.0
+    },
+    {
+        "story": "Simplify Central SSO: eliminate ext token validation end-point\n\nInstead of requiring that clients first validate tokens obtained from an external \"Central SSO\" system, when Usergrid is configured for using Central SSO, it should attempt to verify any unknown token itself.\n\nThis can be implemented by moving the validate external token logic from the ManagementResource and into the TokenService.",
+        "points": 3.0
+    },
+    {
+        "story": "Implement Superuser methods in Management Class for REST tests\n\nImplement Superuser methods in Management Class for REST tests\n\nImplement superuser token methods also",
+        "points": 3.0
+    },
+    {
+        "story": "Get import to work on a distributed system\n\n1. write code and tests\n2. test on a distributed system",
+        "points": 3.0
+    },
+    {
+        "story": "Exception being masked in ClientCredentialsSecurityFilter\n\nAn exception is being masked and causing issues in a deployment.  Here is the class and line.  We should be more specific on what exceptions we catch and at least log them.\n\nhttps://github.com/apache/incubator-usergrid/blob/49ae4ac5b8d5d77e90e6e6c6e9d8b299a5423863/stack/rest/src/main/java/org/apache/usergrid/rest/security/shiro/filters/ClientCredentialsSecurityFilter.java#L65",
+        "points": 3.0
+    },
+    {
+        "story": "Portal appears to hang when it gets a 401\n\nWhen logging into the portal it appears to hang when a 401 is returned from https://stage-exchange-prod.apigee.net/appservices/management/users/{email}.  We should catch this error and handle it better.",
+        "points": 1.0
+    },
+    {
+        "story": "Test Not Passing: ServiceInvocationIT",
+        "points": 1.0
+    },
+    {
+        "story": "[SPIKE] Review 'ignored tests'\n\nHopefully there's nothing bad in there.",
+        "points": 3.0
+    },
+    {
+        "story": "Merge master -> two-dot-o: SSO & Assets changes",
+        "points": 1.0
+    },
+    {
+        "story": "Error and possible race condition in the assets/uuid/data endpoints. \n\nIt looks like we might have a race condition in the assets/uuid/data endpoints. perhaps the assets in general. I noticed my calls were successful about 5% of the time. I put in a 1s wait, and now it's over 95%. When it fails, I get this error:\n\n{\"error\":\"web_application\",\"timestamp\":1391230754494,\"duration\":0,\"exception\":\"javax.ws.rs.WebApplicationException\",\"error_description\":\"com.sun.jersey.api.MessageException: A message body reader for Java class com.sun.jersey.multipart.FormDataMultiPart, and Java type class com.sun.jersey.multipart.FormDataMultiPart, and MIME media type application/octet-stream was not found.\\n\"}",
+        "points": 3.0
+    },
+    {
+        "story": "Rejected ES Index jobs are dropped.  \n\nWhen the index queue is full and ES rejects index requests Usergrid drops them.  The result could be that entities cannot be returned.\n\nWe should handle this soon.  At a minimum, we should put them in an SQS queue or something similar for future handling.",
+        "points": 5.0
+    },
+    {
+        "story": "Update copyright in footer of Portal to 2015",
+        "points": 1.0
+    },
+    {
+        "story": "NPE Under Load\n\nNPE under load.  Please investigate.\n\njava.lang.NullPointerException\n\tat org.apache.usergrid.services.ServiceContext.getPath(ServiceContext.java:118)\n\tat org.apache.usergrid.services.AbstractService.checkPermissionsForEntity(AbstractService.java:1240)\n\tat org.apache.usergrid.services.AbstractCollectionService.putItemByName(AbstractCollectionService.java:314)\n\tat org.apache.usergrid.services.AbstractService.invokeItemWithName(AbstractService.java:677)\n\tat org.apache.usergrid.services.AbstractService.invoke(AbstractService.java:628)\n\tat org.apache.usergrid.services.AbstractService.invoke(AbstractService.java:544)\n\tat org.apache.usergrid.services.ServiceRequest.execute(ServiceRequest.java:226)\n\tat org.apache.usergrid.services.ServiceRequest.execute(ServiceRequest.java:193)\n\tat org.apache.usergrid.rest.applications.ServiceResource.executeServiceRequest(ServiceReso****...",
+        "points": 3.0
+    },
+    {
+        "story": "Convert Usergrid docs & Update for 2.0: Counters & Events",
+        "points": 3.0
+    },
+    {
+        "story": "Implement ability to createItemInCollection using the graph.\n\nThis should fix the broken test in the EntityManagerIt labeled: ownershipScopeCorrect",
+        "points": 3.0
+    },
+    {
+        "story": "Ensure that PUT or POST does not create duplicate org association connections. \n\nDoing PUT creates a duplicate edge on /management/orgs/org/users/email\n\nfor existing users who were already on the org, the POST command to /management/orgs/org/users/email creates a duplicate edge",
+        "points": 2.0
+    },
+    {
+        "story": "[SPIKE] Cross-collection / graph filtering does not work\n\nREST calls of this nature do not work: GET /pets;ql=select * where type='cat'/belongsTo/owners;ql=select * where city='Dallas'",
+        "points": 5.0
+    },
+    {
+        "story": "Test Not Passing: AllEntitiesInSystemObservableIT",
+        "points": 2.0
+    },
+    {
+        "story": "QL for contains 'text*' does not appear to work\n\nselect * where title contains 'ta*' does not work (at all) as documented here:\nhttp://apigee.com/docs/app-services/content/working-queries",
+        "points": 3.0
+    },
+    {
+        "story": "Start Usergrid graduation process\n\n1. update status page to include all users\n2. create DRAFT Top Level Project resolution\n3. start discussion on dev list",
+        "points": 3.0
+    },
+    {
+        "story": "remove index and deindex requests that do not go through sqs e.g. CandidateIdFilter\n\nmove all these requests to sqs.\n\nany piece of code that calls indexproducer.put() has to be changed to call the index service and call to ES asynchronously through sqs",
+        "points": 3.0
+    },
+    {
+        "story": "Support APNS VoIP Push Notifications\n\nIf using older APNS binary provider, multiple certificates would need to be managed as VoIP certificates are provisioned separately by Apple.  If using newer HTTP/2 implementation,  Apple allows a single cert (provisioned with one or more topics) to work for regular, voip, watch notifications for example.  Using HTTP/2 implementation is preferred.",
+        "points": 2.0
+    },
+    {
+        "story": "Support GCM 3.0 for Android Push Notifications",
+        "points": 2.0
+    },
+    {
+        "story": "ElasticSearch Type Mapping has _all in wrong place\n\n_all should be moved to a child of 'entity'",
+        "points": 1.0
+    },
+    {
+        "story": "Ensure USERGRID-530 is addressed in two-dot-o(-dev)\n\nhttps://issues.apache.org/jira/browse/USERGRID-530.  Make sure it gets in 2.0",
+        "points": 3.0
+    },
+    {
+        "story": "After large deletions, graph seek time becomes slow\n\nAfter a large number of deletions, 100k +, seek time on graph becomes very slow when searching collections.  Identify the issue, and implement a fix based off of sha  a09485a3a5ac8b4217b294f4754ea8a70a7ec447",
+        "points": 5.0
+    },
+    {
+        "story": "[SPIKE] Investigate support for Central Usergrid SSO in the Portal\n\nIf Central Usergrid then the Portal should redirect the user to the central Usergrid instance for login/registration.\n\nAnd, when the Portal gets an Admin User token from the Central Usergrid SSO system, the Portal must validate it against the Usergrid system with which it is configured to work.\n\nThis is a spike to design a possible solution for SSO support in portal.",
+        "points": 3.0
+    },
+    {
+        "story": "Default collections are not created by database setup\n\nSteps to reproduce:\n\n1) setup a new Usergrid system\n2) HTTP get the URL /system/database/setup\n3) HTTP get the URL /system/superuser/setup\n4) Login to the Portal\n5) See that there is only a \"roles\" collection\n\nBut there should be these collections:\n    /activities\n    /assets\n    /devices\n    /folders\n    /groups \n    /roles\n    /tokens\n    /users",
+        "points": 3.0
+    },
+    {
+        "story": "Empty string doesn't remove an entity property (null doesn't work either)\n\n\"Users should be able to remove entity properties using either empty string or null \n\n1. Test to see if either works \n2. if empty string does not work, then setting empty string should keep the property but set it to an empty string \n3. null should always remove the key \n\n\ncurl -X POST -i -H \"\"Authorization: Bearer YWMt4i6fzEJREeOh0FGOwhrLOAAAAUIzm9d9wtwQTdewhc1I1Kg8d8yyMOVVQv0\"\" \"\"htts://api.usergrid.com/1hotrod/fdfdsafd/books/8dd42b7a-4325-11e3-a8a9-2be66bc83082?ql=\"\" -d '{\"\"fred\"\":\"\"\"\"}' \n\nor \n\ncurl -X POST -i -H \"\"Authorization: Bearer YWMt4i6fzEJREeOh0FGOwhrLOAAAAUIzm9d9wtwQTdewhc1I1Kg8d8yyMOVVQv0\"\" \"\"htts://api.usergrid.com/1hotrod/fdfdsafd/books/8dd42b7a-4325-11e3-a8a9-2be66bc83082?ql=\"\" -d '{\"\"fred\"\":null}'\"",
+        "points": 3.0
+    },
+    {
+        "story": "Broken link to contribution page\n\nOn the usergrid homepage at http://usergrid.incubator.apache.org the \"Contribution Guidelines\" link points to\n\nhttps://cwiki.apache.org/confluence/display/usergrid/GitHub+Based+Contribution+Workflow\n\nbut it should should really be\n\nhttps://cwiki.apache.org/confluence/display/usergrid/Usergrid+External+Contributors+Guide",
+        "points": 3.0
+    },
+    {
+        "story": "Test and confirm Usergrid 2.1 works with Cassandra 2.1",
+        "points": 2.0
+    },
+    {
+        "story": "Investigate ElasticSearch timeout such that a long-running GC does not pause all ES and Tomcat\n\nI have seen as many as 16 tomcat nodes pausing at the same time across the cluster.  I took a stack trace and have attached it.  \n\nThis one jumped out to me:\n\"http-bio-8080-exec-2\" daemon prio=10 tid=0x00007f0cbc003800 nid=0x20ff waiting on condition [0x00007f0d370dd000]\n   java.lang.Thread.State: WAITING (parking)\n\tat sun.misc.Unsafe.park(Native Method)\n\t- parking to wait for  <0x00000007ee1de4d8> (a org.elasticsearch.common.util.concurrent.BaseFuture$Sync)\n\tat java.util.concurrent.locks.LockSupport.park(LockSupport.java:186)\n\tat java.util.concurrent.locks.AbstractQueuedSynchronizer.parkAndCheckInterrupt(AbstractQueuedSynchronizer.java:834)\n\tat java.util.concurrent.locks.AbstractQueuedSynchronizer.doAcquireSharedInterruptibly(AbstractQueuedSynchronizer.java:994)\n\tat java.util.concurrent.locks.AbstractQueuedSynchronizer.acquireSharedInterruptibly(AbstractQueuedSynchronizer.java:1303)\n\tat org.elasticsearch.common.util.concurrent.BaseFuture$Sync.get(BaseFuture.java:274)\n\tat org.elasticsearch.common.util.concurrent.BaseFuture.get(BaseFuture.java:113)\n\tat org.elasticsearch.action.support.AdapterActionFuture.actionGet(AdapterActionFuture.java:45)\n\tat org.apache.usergrid.persistence.index.impl.EsEntityIndexImpl.search(EsEntityIndexImpl.java:357)\n\tat org.apache.usergrid.corepersistence.CpRelationManager.searchCollection(CpRelationManager.java:963)\n\tat org.apache.usergrid.corepersistence.CpEntityManager.searchCollection(CpEntityManager.java:624)\n\tat org.apache.usergrid.corepersistence.CpEntityManagerFactory.lookupApplication(CpEntityManagerFactory.java:433)\n\tat org.apache.usergrid.rest.organizations.OrganizationResource.getApplicationByName(OrganizationResource.java:137)\n\tat sun.reflect.GeneratedMethodAccessor113.invoke(Unknown Source)\n\tat sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)\n\tat java.lang.reflect.Method.invoke(Method.java:601)\n\tat com.sun.jersey.server.impl.uri.rules.SubLocatorRule.dispatch(SubLocatorRule.java:197)\n\tat com.sun.jersey.server.impl.uri.rules.SubLocatorRule.invokeSubLocator(SubLocatorRule.java:183)\n\tat com.sun.jersey.server.impl.uri.rules.SubLocatorRule.accept(SubLocatorRule.java:110)\n\tat com.sun.jersey.server.impl.uri.rules.RightHandPathRule.accept(RightHandPathRule.java:147)\n\tat com.sun.jersey.server.impl.uri.rules.SubLocatorRule.accept(SubLocatorRule.java:137)\n\tat com.sun.jersey.server.impl.uri.rules.RightHandPathRule.accept(RightHandPathRule.java:147)\n\tat com.sun.jersey.server.impl.uri.rules.ResourceClassRule.accept(ResourceClassRule.java:108)\n\tat com.sun.jersey.server.impl.uri.rules.RightHandPathRule.accept(RightHandPathRule.java:147)\n\tat com.sun.jersey.server.impl.uri.rules.RootResourceClassesRule.accept(RootResourceClassesRule.java:84)\n\tat com.sun.jersey.server.impl.application.WebApplicationImpl._handleRequest(WebApplicationImpl.java:1542)\n\tat com.sun.jersey.server.impl.application.WebApplicationImpl._handleRequest(WebApplicationImpl.java:1473)\n\tat com.sun.jersey.server.impl.application.WebApplicationImpl.handleRequest(WebApplicationImpl.java:1419)\n\tat com.sun.jersey.server.impl.application.WebApplicationImpl.handleRequest(WebApplicationImpl.java:1409)\n\tat com.sun.jersey.spi.container.servlet.WebComponent.service(WebComponent.java:409)\n\tat com.sun.jersey.spi.container.servlet.ServletContainer.service(ServletContainer.java:540)\n\tat com.sun.jersey.spi.container.servlet.ServletContainer.doFilter(ServletContainer.java:909)\n\tat com.sun.jersey.spi.container.servlet.ServletContainer.doFilter(ServletContainer.java:857)\n\tat com.sun.jersey.spi.container.servlet.ServletContainer.doFilter(ServletContainer.java:811)\n\tat org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:241)\n\tat org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:208)\n\tat org.apache.shiro.web.servlet.AbstractShiroFilter.executeChain(AbstractShiroFilter.java:449)\n\tat org.apache.shiro.web.servlet.AbstractShiroFilter$1.call(AbstractShiroFilter.java:365)\n\tat org.apache.shiro.subject.support.SubjectCallable.doCall(SubjectCallable.java:90)\n\tat org.apache.shiro.subject.support.SubjectCallable.call(SubjectCallable.java:83)\n\tat org.apache.shiro.subject.support.DelegatingSubject.execute(DelegatingSubject.java:383)\n\tat org.apache.shiro.web.servlet.AbstractShiroFilter.doFilterInternal(AbstractShiroFilter.java:362)\n\tat org.apache.shiro.web.servlet.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:125)\n\tat org.springframework.web.filter.DelegatingFilterProxy.invokeDelegate(DelegatingFilterProxy.java:346)\n\tat org.springframework.web.filter.DelegatingFilterProxy.doFilter(DelegatingFilterProxy.java:259)\n\tat org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:241)\n\tat org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:208)\n\tat org.apache.usergrid.rest.filters.ContentTypeFilter.doFilter(ContentTypeFilter.java:92)\n\tat org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:241)\n\tat org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:208)\n\tat org.apache.catalina.core.StandardWrapperValve.invoke(StandardWrapperValve.java:220)\n\tat org.apache.catalina.core.StandardContextValve.invoke(StandardContextValve.java:122)\n\tat org.apache.catalina.authenticator.AuthenticatorBase.invoke(AuthenticatorBase.java:503)\n\tat org.apache.catalina.core.StandardHostValve.invoke(StandardHostValve.java:170)\n\tat org.apache.catalina.valves.ErrorReportValve.invoke(ErrorReportValve.java:103)\n\tat org.apache.catalina.valves.AccessLogValve.invoke(AccessLogValve.java:950)\n\tat org.apache.catalina.core.StandardEngineValve.invoke(StandardEngineValve.java:116)\n\tat org.apache.catalina.connector.CoyoteAdapter.service(CoyoteAdapter.java:421)\n\tat org.apache.coyote.http11.AbstractHttp11Processor.process(AbstractHttp11Processor.java:1070)\n\tat org.apache.coyote.AbstractProtocol$AbstractConnectionHandler.process(AbstractProtocol.java:611)\n\tat org.apache.tomcat.util.net.JIoEndpoint$SocketProcessor.run(JIoEndpoint.java:314)\n\t- locked <0x00000007eda23278> (a org.apache.tomcat.util.net.SocketWrapper)\n\tat java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1145)\n\tat java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:615)\n\tat org.apache.tomcat.util.threads.TaskThread$WrappingRunnable.run(TaskThread.java:61)\n\tat java.lang.Thread.run(Thread.java:722)\n\nand Todd called out this one:\n\"collectiontasks-18\" daemon prio=10 tid=0x00007f0cfc004000 nid=0x21b7 waiting on condition [0x00007f0cb87c6000]\n  java.lang.Thread.State: WAITING (parking)\nat sun.misc.Unsafe.park(Native Method)\n- parking to wait for  <0x00000007ed32ccf0> (a org.elasticsearch.common.util.concurrent.BaseFuture$Sync)\nat java.util.concurrent.locks.LockSupport.park(LockSupport.java:186)\nat java.util.concurrent.locks.AbstractQueuedSynchronizer.parkAndCheckInterrupt(AbstractQueuedSynchronizer.java:834)\nat java.util.concurrent.locks.AbstractQueuedSynchronizer.doAcquireSharedInterruptibly(AbstractQueuedSynchronizer.java:994)\nat java.util.concurrent.locks.AbstractQueuedSynchronizer.acquireSharedInterruptibly(AbstractQueuedSynchronizer.java:1303)\nat org.elasticsearch.common.util.concurrent.BaseFuture$Sync.get(BaseFuture.java:274)\nat org.elasticsearch.common.util.concurrent.BaseFuture.get(BaseFuture.java:113)\nat org.elasticsearch.action.support.AdapterActionFuture.actionGet(AdapterActionFuture.java:45)\nat org.apache.usergrid.persistence.index.impl.EsEntityIndexImpl.deletePreviousVersions(EsEntityIndexImpl.java:533)\nat org.apache.usergrid.corepersistence.events.EntityVersionCreatedHandler.versionCreated(EntityVersionCreatedHandler.java:67)\nat org.apache.usergrid.persistence.collection.impl.EntityVersionCreatedTask.fireEvents(EntityVersionCreatedTask.java:97)\nat org.apache.usergrid.persistence.collection.impl.EntityVersionCreatedTask.call(EntityVersionCreatedTask.java:83)\nat org.apache.usergrid.persistence.collection.impl.EntityVersionCreatedTask.call(EntityVersionCreatedTask.java:38)\nat java.util.concurrent.FutureTask$Sync.innerRun(FutureTask.java:334)\nat java.util.concurrent.FutureTask.run(FutureTask.java:166)\nat java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1145)\nat java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:615)\nat java.lang.Thread.run(Thread.java:722)",
+        "points": 3.0
+    },
+    {
+        "story": "Create a multi region lock ability for shard allocation\n\nWith the new shard proposal algorithm, we need the ability to either \n\n1)  Perform routing aware shard allocation across multi regions.  This ensures that we",
+        "points": 5.0
+    },
+    {
+        "story": "Fix and prune Usergrid tools in 2.1\n\nThe Usergrid tools are broken in a variety of ways in the two-dot-o and two-dot-o-dev brands. The tools do not compile. Many rely on outdated 1.0 concepts. Many are obsolete.\n\n1. Delete any obsolete tools\n2. Make all tools compile",
+        "points": 3.0
+    },
+    {
+        "story": "[SPIKE] Investigate and propose 2-3 approaches for indexing specific attributes of documents\n\nPlease investigate and propose a few different options for explicit indexing.\n\nThings to consider:\n1) How other databases handle this\n2) Ability to index all occurrences of a given field name - for example, index 'cat' whether it is a root property, pets.cat, owners.cat, etc.",
+        "points": 5.0
+    },
+    {
+        "story": "Queries without 'ql' return a Null Pointer instead of a meaningful message\n\nhttp://api.usergrid.com/vta/sandbox/stops?select * where location within 3 of 37.415449732, -121.920367767  - this will return an 500/NPE when it should be a 4xx, and preferably have a better error message.",
+        "points": 3.0
+    },
+    {
+        "story": "SPIKE: UnexpectedEOF Error\n\nThis happens occasionally under very light load: {u'fault': {u'faultstring': u'Unexpected EOF', u'detail': {u'errorcode': u'messaging.adaptors.http.UnexpectedEOF'}}}\n\nThis is not heavy load at all.  Will look for the server-side stack trace.",
+        "points": 3.0
+    },
+    {
+        "story": "Create 2.1 Release for Apache\n\nWe need to create a 2.1 release for Apache.  Would be nice to have a binary WAR distribution.",
+        "points": 3.0
+    },
+    {
+        "story": "Fix EntityMapSerialization in EntityToMapConverter to remove type serialization\n\nEntityToMapConverter line 143 injects binary objects into our serialized maps.  Probably a good idea to change this to just map structures instead.  we want to remove the type info. see attached",
+        "points": 3.0
+    },
+    {
+        "story": "iOS Push Notification Errors\n\nSee the following ticket: https://apigeesc.atlassian.net/browse/APIBAAS-1525.\n\n2015-03-31 13:57:37,870 ERROR (pool-525-thread-1) [org.apache.usergrid.services.notifications.apns.RejectedAPNsListener] - Failed to register push connection\njava.nio.channels.ClosedChannelException\n2015-03-31 13:57:37,872 ERROR (pool-525-thread-1) [org.apache.usergrid.services.notifications.apns.RejectedAPNsListener] - Failed to register push connection\njava.nio.channels.ClosedChannelException\n2015-03-31 13:57:37,873 ERROR (pool-525-thread-1) [org.apache.usergrid.services.notifications.apns.RejectedAPNsListener] - Failed to register push connection\njava.nio.channels.ClosedChannelException\n2015-03-31 13:57:37,881 ERROR (pool-525-thread-1) [org.apache.usergrid.services.notifications.apns.RejectedAPNsListener] - Failed to register push connection\njava.nio.channels.ClosedChannelException\n2015-03-31 13:57:38,080 ERROR (pool-525-thread-1) [org.apache.usergrid.services.notifications.apns.RejectedAPNsListener] - Failed to register push connection\njava.nio.channels.ClosedChannelException\n2015-03-31 13:57:38,084 ERROR (pool-525-thread-1) [org.apache.usergrid.services.notifications.apns.RejectedAPNsListener] - Failed to register push connection\njava.nio.channels.ClosedChannelException\n2015-03-31 13:57:38,085 ERROR (pool-525-thread-1) [org.apache.usergrid.services.notifications.apns.RejectedAPNsListener] - Failed to register push connection\njava.nio.channels.ClosedChannelException\n2015-03-31 13:57:38,093 ERROR (pool-525-thread-1) [org.apache.usergrid.services.notifications.apns.RejectedAPNsListener] - Failed to register push connection\njava.nio.channels.ClosedChannelException\n2015-03-31 13:57:38,292 ERROR (pool-525-thread-1) [org.apache.usergrid.services.notifications.apns.RejectedAPNsListener] - Failed to register push connection\njava.nio.channels.ClosedChannelException\n2015-03-31 13:57:38,299 ERROR (pool-525-thread-1) [org.apache.usergrid.services.notifications.apns.RejectedAPNsListener] - Failed to register push connection\njava.nio.channels.ClosedChannelException\n2015-03-31 13:57:38,300 ERROR (pool-525-thread-1) [org.apache.usergrid.services.notifications.apns.RejectedAPNsListener] - Failed to register push connection\njava.nio.channels.ClosedChannelException\n2015-03-31 13:57:38,304 ERROR (pool-525-thread-1) [org.apache.usergrid.services.notifications.apns.RejectedAPNsListener] - Failed to register push connection\njava.nio.channels.ClosedChannelException\n2015-03-31 13:57:38,510 ERROR (pool-525-thread-1) [org.apache.usergrid.services.notifications.apns.RejectedAPNsListener] - Failed to register push connection\njava.nio.channels.ClosedChannelException\n2015-03-31 13:57:38,511 ERROR (pool-525-thread-1) [org.apache.usergrid.services.notifications.apns.RejectedAPNsListener] - Failed to register push connection\njava.nio.channels.ClosedChannelException\n2015-03-31 13:57:38,513 ERROR (pool-525-thread-1) [org.apache.usergrid.services.notifications.apns.RejectedAPNsListener] - Failed to register push connection\njava.nio.channels.ClosedChannelException\n2015-03-31 13:57:38,517 ERROR (pool-525-thread-1) [org.apache.usergrid.services.notifications.apns.RejectedAPNsListener] - Failed to register push connection\njava.nio.channels.ClosedChannelException\n2015-03-31 13:57:38,723 ERROR (pool-525-thread-1) [org.apache.usergrid.services.notifications.apns.RejectedAPNsListener] - Failed to register push connection\njava.nio.channels.ClosedChannelException\n2015-03-31 13:57:38,724 ERROR (pool-525-thread-1) [org.apache.usergrid.services.notifications.apns.RejectedAPNsListener] - Failed to register push connection\njava.nio.channels.ClosedChannelException\n2015-03-31 13:57:38,725 ERROR (pool-525-thread-1) [org.apache.usergrid.services.notifications.apns.RejectedAPNsListener] - Failed to register push connection\njava.nio.channels.ClosedChannelException\n2015-03-31 13:57:38,729 ERROR (pool-525-thread-1) [org.apache.usergrid.services.notifications.apns.RejectedAPNsListener] - Failed to register push connection\njava.nio.channels.ClosedChannelException\n2015-03-31 13:57:38,935 ERROR (pool-525-thread-1) [org.apache.usergrid.services.notifications.apns.RejectedAPNsListener] - Failed to register push connection\njava.nio.channels.ClosedChannelException\n2015-03-31 13:57:38,936 ERROR (pool-525-thread-1) [org.apache.usergrid.services.notifications.apns.RejectedAPNsListener] - Failed to register push connection\njava.nio.channels.ClosedChannelException\n2015-03-31 13:57:38,938 ERROR (pool-525-thread-1) [org.apache.usergrid.services.notifications.apns.RejectedAPNsListener] - Failed to register push connection\njava.nio.channels.ClosedChannelException\n2015-03-31 13:57:38,941 ERROR (pool-525-thread-1) [org.apache.usergrid.services.notifications.apns.RejectedAPNsListener] - Failed to register push connection\njava.nio.channels.ClosedChannelException\n2015-03-31 13:57:39,146 ERROR (pool-525-thread-1) [org.apache.usergrid.services.notifications.apns.RejectedAPNsListener] - Failed to register push connection\njava.nio.channels.ClosedChannelException\n2015-03-31 13:57:39,147 ERROR (pool-525-thread-1) [org.apache.usergrid.services.notifications.apns.RejectedAPNsListener] - Failed to register push connection",
+        "points": 3.0
+    }
+]

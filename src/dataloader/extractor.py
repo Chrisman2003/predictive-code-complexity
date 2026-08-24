@@ -1,6 +1,8 @@
 import os
 import json
 import requests
+import random
+import sys
 from typing import List, Dict, Any
 
 class DataExtractor:
@@ -25,13 +27,17 @@ class DataExtractor:
                     return field_id
                     
         print("[!] Warning: Could not dynamically resolve 'Story Points' field. Falling back to heuristic.")
-        return None
+        return None        
     
-    def _save(self, dataset: List[Dict[str, Any]]):
-        with open(self.output_path, "w", encoding="utf-8") as f:
+    def _save(self, dataset: List[Dict[str, Any]], filepath: str = None):
+        save_path = filepath or self.output_path
+        os.makedirs(os.path.dirname(save_path), exist_ok=True)
+        
+        with open(save_path, "w", encoding="utf-8") as f:
             json.dump(dataset, f, indent=4)
-        print(f"[+] Successfully extracted {len(dataset)} stories.")
-        print(f"[+] Dataset saved to {self.output_path}")
+            
+        print(f"[+] Saved {len(dataset)} records to {save_path}")    
+        
 
     def extract_jira(
         self, 
@@ -89,7 +95,7 @@ class DataExtractor:
             if points is not None and story:
                 dataset.append({"story": story, "points": points})
 
-        self._save(dataset)
+        print(f"[+] Successfully extracted {len(dataset)} stories.")
         return dataset
 
     def extract_github(self, repo: str, token: str = None) -> List[Dict[str, Any]]:
@@ -132,17 +138,21 @@ class DataExtractor:
             if points is not None and story:
                 dataset.append({"story": story, "points": points})
 
-        self._save(dataset)
+        print(f"[+] Successfully extracted {len(dataset)} stories.")
         return dataset
     
 
 def run_extraction_pipeline(args):
     """Wrapper function to route CLI arguments to the extractor."""
     extractor = DataExtractor(output_path=args.out)
+    dataset = []
     
+    # ==========================================
+    # EXTRACTION LOGIC
+    # ==========================================
     if args.source == "github":
         token = os.getenv("GITHUB_TOKEN", getattr(args, "token", None))
-        extractor.extract_github(repo=args.target, token=token)
+        dataset = extractor.extract_github(repo=args.target, token=token)
         
     elif args.source == "jira":
         token = os.getenv("JIRA_API_TOKEN", getattr(args, "token", None))
@@ -153,9 +163,52 @@ def run_extraction_pipeline(args):
             print("[!] Error: Jira extraction requires --domain.")
             return
             
-        extractor.extract_jira(
+        dataset = extractor.extract_jira(
             project_key=args.target, 
             domain=args.domain, 
             email=email, 
             api_token=token
         )
+        
+    if not dataset:
+        print(f"[!] No issues found for target '{args.target}' with the current filters.")
+        print("[!] Aborting save/split operations.")
+        return  # Stops the function completely
+        
+    # ==========================================
+    # SPLITTING LOGIC
+    # ==========================================
+    # If the user passed --split (e.g., --split 60 20 20) AND we got data back
+    if getattr(args, "split", None):
+        train_pct, val_pct, test_pct = args.split
+        
+        if sum(args.split) != 100:
+            print(f"[!] Error: Split percentages {args.split} do not equal 100.")
+            sys.exit(1)
+
+        print(f"[*] Shuffling and partitioning dataset into {train_pct}% Train, {val_pct}% Val, {test_pct}% Test...")
+        
+        random.seed(42)
+        random.shuffle(dataset)
+        
+        total = len(dataset)
+        train_end = int(total * (train_pct / 100.0))
+        val_end = train_end + int(total * (val_pct / 100.0))
+        
+        splits = {
+            "train": dataset[:train_end],
+            "val": dataset[train_end:val_end],
+            "test": dataset[val_end:]
+        }
+        
+        # Build the dynamic path: data/processed/Mesos/
+        target_dir = args.target.replace("/", "_")
+        base_dir = os.path.join("data", "processed", target_dir)
+        os.makedirs(base_dir, exist_ok=True)
+        
+        target_prefix = target_dir.lower()
+
+        for split_name, split_data in splits.items():
+            # Generate the dynamic path for this specific split
+            filepath = os.path.join(base_dir, f"{target_prefix}_dataset_{split_name}.json")
+            extractor._save(split_data, filepath=filepath)

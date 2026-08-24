@@ -1,0 +1,546 @@
+[
+    {
+        "story": "In-progress instances on Update page continue to pulse after update is aborted\n\nWhen an update is aborted, any instances that were in progress still have the css class of {{instance-updating}} and as such, continue to pulse.",
+        "points": 3.0
+    },
+    {
+        "story": "Remove LiveClusterState\n\nIt should be fully replaced by CachedClusterState now.",
+        "points": 1.0
+    },
+    {
+        "story": "Improve UI task status reporting experience\n\nMesos may append an optional message with task status update that is currently surfacing in the UI via TaskEvent. These messages may not be user friendly and add confusion. One example is \"Unregistered executor\" issued when Mesos kills an assigned task that did not have a chance to run yet. While this message does not constitute a failure it may create an illusion of abnormal behavior in an otherwise normal operation.\n\nConsider filtering/formatting messages in the UI/scheduler to avoid adverse user experience. The ideal solution should also leverage TaskStatus.reason field to show additional status details.",
+        "points": 2.0
+    },
+    {
+        "story": "Explicit reconciliation must use SLAVE_ASSIGNED_STATES\n\nTaskReconciler is currently using ACTIVE_STATES filter when fetching tasks for explicit reconciliation. Since Mesos does not know anything about non-assigned tasks, this results in log messages like this:\n{noformat}\nallowed)\nE0619 00:09:35.219 THREAD175 org.apache.aurora.scheduler.state.TaskStateMachine$5.execute: Illegal state transition attempted: PENDING -> LOST (not allowed)\nI0619 00:09:35.220 THREAD13437 org.apache.aurora.scheduler.mesos.MesosSchedulerImpl.logStatusUpdate: Received status update for task 1371518881594-mesos-pending-resources-100-7\n7-fbbd6074-0896-495f-9a88-1d0ff48495fe in state TASK_LOST from SOURCE_MASTER with REASON_RECONCILIATION: Reconciliation: Task is unknown\n{noformat}\n\nWhile there is no harm to PENDING or THROTTLED tasks, the above messages pollute logs and should be suppressed. Use SLAVE_ASSIGNED_STATES filter instead of ACTIVE_STATES.",
+        "points": 2.0
+    },
+    {
+        "story": "Build can fail if repo directory absolute path is too long\n\nSee https://github.com/pypa/pip/issues/1773\n\nThis manifests as pip failing:\n{noformat}\n/home/wfarner/code/aurora/apache-aurora-0.8.0-rc0-verify/apache-aurora-0.8.0-rc0/build-support/python/isort: /home/wfarner/code/aurora/apache-aurora-0.8.0-rc0-verify/apache-aurora-0.8.0-rc0/build-support/python/isort.venv/bin/pip: /home/wfarner/code/aurora/apache-aurora-0.8.0-rc0-verify/apache-aurora-0.8.0-: bad interpreter: No such file or directory\n{noformat}",
+        "points": 2.0
+    },
+    {
+        "story": "Update documentation to explain the scheduler heartbeat mechanism\n\nTBD [~maximk]",
+        "points": 1.0
+    },
+    {
+        "story": "Reconsider default for -require_slave_checkpoint\n\nGiven that slave recovery has been stable in mesos for a very long time it's worth reassessing the default value of this flag [1] (or maybe removing it altogether).\n\nhttps://github.com/apache/incubator-aurora/blob/master/src/main/java/org/apache/aurora/scheduler/DriverFactory.java#L75-L101",
+        "points": 1.0
+    },
+    {
+        "story": "Migrate client off of deprecated SessionKey APIs\n\nRemove SessionKey injection from the scheduler client, instead relying on transport-level authentication.",
+        "points": 3.0
+    },
+    {
+        "story": "Create Aurora oversubscription design summary",
+        "points": 5.0
+    },
+    {
+        "story": "FrameworkInfo support for REVOCABLE_RESOURCES capability\n\nFrom design doc:\n{quote}\nIn order to start receiving revocable offers, Aurora will be required to register with REVOCABLE_RESOURCES flag set as a new capability type.\n{quote}",
+        "points": 2.0
+    },
+    {
+        "story": "De-generalize resource handling in Scheduler\n\nFrom design doc: \n{quote}\nTo handle revocable resources correctly Aurora needs to de-generalize and simplify its internal resource representation. The new resource vector should be capable of aggregating resources by revocable flag. This will require refactoring existing resource handling (including  AURORA-105), which will also help to support Mesos framework role in future.\n{quote}",
+        "points": 8.0
+    },
+    {
+        "story": "src.test.python.apache.aurora.executor.thermos_task_runner appears to be flaky\n\nI've seen this test fail on a few reviews recently, but succeeds on a retry.\n\n{noformat}\n                     ==================== FAILURES ====================\n                      TestThermosTaskRunnerIntegration.test_integration_stop \n                     \n                     self = <test_thermos_task_runner.TestThermosTaskRunnerIntegration object at 0x7ff3e1dc6fd0>\n                     \n                     \u001b[1m    def test_integration_stop(self):\u001b[0m\n                     \u001b[1m      with self.yield_sleepy(ThermosTaskRunner, sleep=1000, exit_code=0) as task_runner:\u001b[0m\n                     \u001b[1m        task_runner.start()\u001b[0m\n                     \u001b[1m        task_runner.forked.wait()\u001b[0m\n                     \u001b[1m    \u001b[0m\n                     \u001b[1m        assert task_runner.status is None\u001b[0m\n                     \u001b[1m    \u001b[0m\n                     \u001b[1m        task_runner.stop()\u001b[0m\n                     \u001b[1m    \u001b[0m\n                     \u001b[1m>       assert task_runner.status is not None\u001b[0m\n                     \u001b[1m\u001b[31mE       assert None is not None\u001b[0m\n                     \u001b[1m\u001b[31mE        +  where None = <apache.aurora.executor.thermos_task_runner.ThermosTaskRunner object at 0x7ff3e3333490>.status\u001b[0m\n                     \n                     src/test/python/apache/aurora/executor/test_thermos_task_runner.py:175: AssertionError\n                     -------------- Captured stderr call --------------\n                     Writing log files to disk in /tmp/user/2396/tmpqHF5bz\n                     ERROR] Could not quitquitquit runner: Cannot take control of a task in terminal state.\n                      generated xml file: /home/jenkins/jenkins-slave/workspace/AuroraBot/dist/test-results/src.test.python.apache.aurora.executor.thermos_task_runner.xml \n                     \u001b[1m\u001b[31m====== 1 failed, 7 passed in 81.16 seconds =======\u001b[0m\n                     src.test.python.apache.aurora.admin.admin                                       .....   SUCCESS\n                     src.test.python.apache.aurora.admin.host_maintenance                            .....   SUCCESS\n                     src.test.python.apache.aurora.admin.maintenance                                 .....   SUCCESS\n                     src.test.python.apache.aurora.client.api.api                                    .....   SUCCESS\n                     src.test.python.apache.aurora.client.api.instance_watcher                       .....   SUCCESS\n                     src.test.python.apache.aurora.client.api.job_monitor                            .....   SUCCESS\n                     src.test.python.apache.aurora.client.api.mux                                    .....   SUCCESS\n                     src.test.python.apache.aurora.client.api.quota_check                            .....   SUCCESS\n                     src.test.python.apache.aurora.client.api.restarter                              .....   SUCCESS\n                     src.test.python.apache.aurora.client.api.scheduler_client                       .....   SUCCESS\n                     src.test.python.apache.aurora.client.api.sla                                    .....   SUCCESS\n                     src.test.python.apache.aurora.client.api.task_util                              .....   SUCCESS\n                     src.test.python.apache.aurora.client.api.updater                                .....   SUCCESS\n                     src.test.python.apache.aurora.client.api.updater_util                           .....   SUCCESS\n                     src.test.python.apache.aurora.client.base                                       .....   SUCCESS\n                     src.test.python.apache.aurora.client.binding_helper                             .....   SUCCESS\n                     src.test.python.apache.aurora.client.cli.api                                    .....   SUCCESS\n                     src.test.python.apache.aurora.client.cli.client                                 .....   SUCCESS\n                     src.test.python.apache.aurora.client.cli.command_hooks                          .....   SUCCESS\n                     src.test.python.apache.aurora.client.cli.config                                 .....   SUCCESS\n                     src.test.python.apache.aurora.client.cli.cron                                   .....   SUCCESS\n                     src.test.python.apache.aurora.client.cli.inspect                                .....   SUCCESS\n                     src.test.python.apache.aurora.client.cli.job                                    .....   SUCCESS\n                     src.test.python.apache.aurora.client.cli.plugins                                .....   SUCCESS\n                     src.test.python.apache.aurora.client.cli.quota                                  .....   SUCCESS\n                     src.test.python.apache.aurora.client.cli.sla                                    .....   SUCCESS\n                     src.test.python.apache.aurora.client.cli.supdate                                .....   SUCCESS\n                     src.test.python.apache.aurora.client.cli.task                                   .....   SUCCESS\n                     src.test.python.apache.aurora.client.cli.update                                 .....   SUCCESS\n                     src.test.python.apache.aurora.client.cli.version                                .....   SUCCESS\n                     src.test.python.apache.aurora.client.config                                     .....   SUCCESS\n                     src.test.python.apache.aurora.client.hooks.hooked_api                           .....   SUCCESS\n                     src.test.python.apache.aurora.client.hooks.non_hooked_api                       .....   SUCCESS\n                     src.test.python.apache.aurora.common.test_aurora_job_key                        .....   SUCCESS\n                     src.test.python.apache.aurora.common.test_cluster                               .....   SUCCESS\n                     src.test.python.apache.aurora.common.test_cluster_option                        .....   SUCCESS\n                     src.test.python.apache.aurora.common.test_clusters                              .....   SUCCESS\n                     src.test.python.apache.aurora.common.test_http_signaler                         .....   SUCCESS\n                     src.test.python.apache.aurora.common.test_pex_version                           .....   SUCCESS\n                     src.test.python.apache.aurora.common.test_shellify                              .....   SUCCESS\n                     src.test.python.apache.aurora.common.test_transport                             .....   SUCCESS\n                     src.test.python.apache.aurora.config.test_base                                  .....   SUCCESS\n                     src.test.python.apache.aurora.config.test_constraint_parsing                    .....   SUCCESS\n                     src.test.python.apache.aurora.config.test_loader                                .....   SUCCESS\n                     src.test.python.apache.aurora.config.test_thrift                                .....   SUCCESS\n                     src.test.python.apache.aurora.executor.common.task_info                         .....   SUCCESS\n                     src.test.python.apache.aurora.executor.executor_base                            .....   SUCCESS\n                     src.test.python.apache.aurora.executor.executor_detector                        .....   SUCCESS\n                     src.test.python.apache.aurora.executor.executor_vars                            .....   SUCCESS\n                     src.test.python.apache.aurora.executor.status_manager                           .....   SUCCESS\n                     src.test.python.apache.aurora.executor.thermos_task_runner                      .....   FAILURE\n                     src.test.python.apache.thermos.common.test_pathspec                             .....   SUCCESS\n                     src.test.python.apache.thermos.core.test_runner_integration                     .....   SUCCESS\n                     src.test.python.apache.thermos.monitoring.test_disk                             .....   SUCCESS\n                     \nFAILURE\n\n\u001b[31m\n{noformat}",
+        "points": 5.0
+    },
+    {
+        "story": "Blocked updates missing from cluster-wide in progress view\n\nIn the /updates endpoint, updates that are in ROLL_FORWARD_AWAITING_PULSE state are not included under in progress updates.",
+        "points": 2.0
+    },
+    {
+        "story": "Reevaluate \"max_schedule_attempts_per_sec\" with asynchronous preemptor\n\nWith step 2 of AURORA-1158 completed, the preemptor is removed from the critical scheduling loop making scheduling much faster (perf comparison is available here: https://reviews.apache.org/r/32225/)\n\nReevaluate what the {{max_schedule_attempts_per_sec}} should be now.",
+        "points": 2.0
+    },
+    {
+        "story": "Add update sequence into \"aurora job diff\" command",
+        "points": 3.0
+    },
+    {
+        "story": "Add e2e integration tests for revocable tasks",
+        "points": 3.0
+    },
+    {
+        "story": "End-to-end tests fail with 401 unuthorized\n\nCan be consistently reproduced on {{24088ef}}.\n\n{noformat}\n+ kadmin.local -q 'ktadd -keytab testdir/root.keytab root'\nAuthenticating as principal user/admin@KRBTEST.COM with password.\nEntry for principal root with kvno 2, encryption type aes256-cts-hmac-sha1-96 added to keytab WRFILE:testdir/root.keytab.\nEntry for principal root with kvno 2, encryption type aes128-cts-hmac-sha1-96 added to keytab WRFILE:testdir/root.keytab.\nEntry for principal root with kvno 2, encryption type des3-cbc-sha1 added to keytab WRFILE:testdir/root.keytab.\nEntry for principal root with kvno 2, encryption type arcfour-hmac added to keytab WRFILE:testdir/root.keytab.\n+ test_snapshot\n+ snapshot_as vagrant\n+ local principal=vagrant\n+ kinit -k -t testdir/vagrant.keytab vagrant\n++ printf snapshot-response.%s.json vagrant\n+ curl -u : --negotiate -w '%{http_code}\\n' -o snapshot-response.vagrant.json -s http://192.168.33.7:8081/api --data-binary '[1,\"snapshot\",1,0,{}]'\n401\n+ kdestroy\n+ cat snapshot-response.vagrant.json\n<html>\n<head>\n<meta http-equiv=\"Content-Type\" content=\"text/html;charset=ISO-8859-1\"/>\n<title>Error 401 Unauthorized</title>\n</head>\n<body>\n<h2>HTTP ERROR: 401</h2>\n<p>Problem accessing /api. Reason:\n<pre>    Unauthorized</pre></p>\n<hr /><i><small>Powered by Jetty://</small></i>\n                                                \n                                                \n                                                \n                                                \n                                                \n                                                \n                                                \n                                                \n                                                \n                                                \n                                                \n                                                \n                                                \n                                                \n                                                \n                                                \n                                                \n                                                \n                                                \n                                                \n</body>\n</html>\n\n{noformat}",
+        "points": 3.0
+    },
+    {
+        "story": "aurora executor _shutdown deadline calls should be daemonized\n\nIn the aurora executor shutdown method, we have deadline() calls:\n\n{noformat}\n  def _shutdown(self, status_result):\n    runner_status = self._runner.status\n\n    try:\n      deadline(self._runner.stop, timeout=self.STOP_TIMEOUT)\n    except Timeout:\n      log.error('Failed to stop runner within deadline.')\n\n    try:\n      deadline(self._chained_checker.stop, timeout=self.STOP_TIMEOUT)\n    except Timeout:\n      log.error('Failed to stop all checkers within deadline.')\n\n    # If the runner was alive when _shutdown was called, defer to the status_result,\n    # otherwise the runner's terminal state is the preferred state.\n    exit_status = runner_status or status_result\n\n    self.send_update(\n        self._driver,\n        self._task_id,\n        exit_status.status,\n        status_result.reason)\n\n    self.terminated.set()\n    defer(self._driver.stop, delay=self.PERSISTENCE_WAIT)\n{noformat}\n\nHowever if runner.stop fails with a Timeout exception, the spawned AnonymousThread is not daemonized and causes the executor to fail to exit.  This means that the cgroup will not be torn down and if the runner.stop actually failed, the process can stay alive even if TASK_KILLED was delivered.",
+        "points": 1.0
+    },
+    {
+        "story": "Add an indicator to observer that task may no longer be running\n\nWith the sunsetting of the gc executor, an OOM will cause the task status reported in the observer to be 'ACTIVE'.  The observer has the smarts (using psutil) to detect whether the reported active processes are actually running.  If they're not, consider putting a 'warning, this task may have been killed uncleanly' or something along those lines.",
+        "points": 5.0
+    },
+    {
+        "story": "DB task store is enabled by default when staging a recovery\n\nThe new DB task store implementation is turned on by default for the TemporaryStorage since it uses a unit test DB init path (1). This makes recovery from backup impossible if there is any task data triggering constraint violations during staging a recovery from backup file. \n\n(1) - https://github.com/apache/aurora/blob/65df91bfd7e3a2ada38a5fe4d620e6373d0f59bf/src/main/java/org/apache/aurora/scheduler/storage/backup/TemporaryStorage.java#L69",
+        "points": 2.0
+    },
+    {
+        "story": "Add a way to watch a scheduler-driven update until it's complete\n\nIt would be nice for scripts that coordinate updates to have the ability to watch a scheduler-driven update until it has completed. This is currently possible by scripting the client, e.g. https://github.com/apache/aurora/blob/master/src/test/sh/org/apache/aurora/e2e/test_end_to_end.sh#L149-L166, however given this is likely a common requirement, we should encapsulate this functionality within the client itself.\n\nTwo suggestions are adding {{aurora update watch ...}} or {{aurora update status --watch ...}}.\n\nThe command should periodically poll the scheduler for the status of the update and exit 0 for successful updates and 1 for failed updates.",
+        "points": 3.0
+    },
+    {
+        "story": "Updater does not skip already updated instances with /INSTANCES option.\n\nThe new updater is too restrictive when processing /INSTANCES option. E.g. if instance 0 is already updated but the client sends /0-3 range, the entire request is rejected with: \"updateOnlyTheseInstances contains instances irrelevant to the update: [0]\".\n\nhttps://github.com/apache/aurora/blob/2dc1d59f1e772e220b3bfb26480c3b90c688800f/src/main/java/org/apache/aurora/scheduler/thrift/SchedulerThriftInterface.java#L1175-L1181",
+        "points": 2.0
+    },
+    {
+        "story": "End-to-end test stalls at SSH prompt\n\nOn {{38c2e76}}, end-to-end tests stall at this prompt (not sure when specifically this was introduced):\n\n{noformat}\n++ aurora task run devcluster/vagrant/test/http_example ls\nThe authenticity of host '192.168.33.7 (192.168.33.7)' can't be established.\nECDSA key fingerprint is c2:27:21:79:51:2a:cc:49:7d:f8:9b:30:94:e4:e4:ba.\nAre you sure you want to continue connecting (yes/no)? yes\n{noformat}",
+        "points": 2.0
+    },
+    {
+        "story": "Primary key violation when modifying cron jobs with DbCronJobStore\n\nCronJobStore supports mutation via {{saveAcceptedJob}}, which acts as a put.  The implementation of DbCronJobStore implements this as an {{INSERT}}, which fails on a primary key uniqueness violation.",
+        "points": 2.0
+    },
+    {
+        "story": "Replace enable_api_security arg with a value for http_authentication_mechanism\n\nEnabling API security involves minimally setting 2 args:\n{noformat}\n-enable_api_security=true\n-http_authentication_mechanism=BASIC\n{noformat}\n\nThis could open the possibility of confusing combinations of arguments that may behave in unexpected ways, or not work at all.  Remove {{enable_api_security}} in favor of {{-http_authentication_mechanism=NONE}}, to be the default value.",
+        "points": 1.0
+    },
+    {
+        "story": "Failed sandbox initialization can cause tasks to go LOST\n\nWhen we initialize the sandbox, we only catch Sandbox specific error types, meaning that if an unexpected error is raised, the executor just hangs until the timeout is exceeded, at which point the task goes lost.\n\nWe should instead broadly catch exceptions raised during sandbox initialization and quickly fail tasks.\n\nAdditionally, the {{DockerDirectorySandbox}} was not properly catching errors raised when creating/symlinking which led to the above problem in the event of a misconfiguration. In practice this issue shouldn't have occurred in normal usage, but it made development slow until I tracked down what was causing the tasks to just hang.",
+        "points": 3.0
+    },
+    {
+        "story": "DelayExecutor is flaky within scheduling loop\n\nTaskGroups now uses DelayExecutor introduced to gate async operations. The problem though is that DelayExecutor queue is only flushed on DB transaction completion (1). This means no scheduling can ever proceed unless there is _some_ storage mutation activity. If/when there are no storage writes scheduling effectively halts. \n\nWhile it unlikely to happen in production, it is consistently reproducible with e2e tests in vagrant on any subsequent run.\n\n\n(1) - https://github.com/apache/aurora/blob/06ddaadbcba4c66b8019815de6ca27d50a9df77d/src/main/java/org/apache/aurora/scheduler/storage/db/DbStorage.java#L175-L178",
+        "points": 5.0
+    },
+    {
+        "story": "RescheduleCalculator precondition fails when using DbTaskStore\n\nWhen enabling the DB task store, i frequently encounter this exception due to a precondition check fail in RescheduleCalculator:\n{noformat}\nE0710 22:33:48.688 THREAD138 org.apache.aurora.scheduler.events.PubsubEventModule$1.handleException: Failed to dispatch event to public void org.apache.aurora.scheduler.async.TaskThrottler.taskChangedState(org.apache.aurora.scheduler.events.PubsubEvent$TaskStateChange): java.lang.IllegalStateException\njava.lang.IllegalStateException\n        at com.google.common.base.Preconditions.checkState(Preconditions.java:161)\n        at org.apache.aurora.scheduler.async.RescheduleCalculator$RescheduleCalculatorImpl$1.apply(RescheduleCalculator.java:103)\n        at org.apache.aurora.scheduler.async.RescheduleCalculator$RescheduleCalculatorImpl$1.apply(RescheduleCalculator.java:85)\n        at org.apache.aurora.scheduler.async.RescheduleCalculator$RescheduleCalculatorImpl.getFlappingPenaltyMs(RescheduleCalculator.java:159)\n        at org.apache.aurora.scheduler.async.TaskThrottler.taskChangedState(TaskThrottler.java:72)\n        at sun.reflect.GeneratedMethodAccessor89.invoke(Unknown Source)\n        at sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)\n        at java.lang.reflect.Method.invoke(Method.java:497)\n        at com.google.common.eventbus.EventSubscriber.handleEvent(EventSubscriber.java:74)\n        at com.google.common.eventbus.SynchronizedEventSubscriber.handleEvent(SynchronizedEventSubscriber.java:47)\n        at com.google.common.eventbus.EventBus.dispatch(EventBus.java:322)\n        at com.google.common.eventbus.AsyncEventBus.access$001(AsyncEventBus.java:34)\n        at com.google.common.eventbus.AsyncEventBus$1.run(AsyncEventBus.java:117)\n        at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1142)\n        at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:617)\n        at java.lang.Thread.run(Thread.java:745)\n{noformat}",
+        "points": 5.0
+    },
+    {
+        "story": "Add documentation for HTTP basic and kerberos authentication\n\nAdd a new markdown page linked from {{deploying-aurora-scheduler.md}} that offers instructions for using HTTP basic authentication for the web UI and API, as well as an example for integrating with kerberos.",
+        "points": 2.0
+    },
+    {
+        "story": "DbCronJobStore does not go through TaskConfig de-dupe code, breaking uniqueness assumptions elsewhere\n\nThe result is a stack trace like this:\n{noformat}\n        at com.google.common.collect.ImmutableMap.checkNoConflict(ImmutableMap.java:150)\n        at com.google.common.collect.RegularImmutableMap.checkNoConflictInBucket(RegularImmutableMap.java:104)\n        at com.google.common.collect.RegularImmutableMap.<init>(RegularImmutableMap.java:70)\n        at com.google.common.collect.ImmutableMap$Builder.build(ImmutableMap.java:254)\n        at com.google.common.collect.Maps.uniqueIndex(Maps.java:1166)\n        at com.google.common.collect.Maps.uniqueIndex(Maps.java:1140)\n        at com.google.common.collect.FluentIterable.uniqueIndex(FluentIterable.java:424)\n        at org.apache.aurora.scheduler.storage.db.DbTaskStore.getTaskConfigRows(DbTaskStore.java:142)\n        at org.apache.aurora.scheduler.storage.db.DbTaskStore.saveTasks(DbTaskStore.java:170)\n        at com.twitter.common.inject.TimedInterceptor.invoke(TimedInterceptor.java:87)\n        at org.apache.aurora.scheduler.storage.db.DbTaskStore.mutateTasks(DbTaskStore.java:234)\n        at com.twitter.common.inject.TimedInterceptor.invoke(TimedInterceptor.java:87)\n        at org.apache.aurora.scheduler.storage.log.WriteAheadStorage.mutateTasks(WriteAheadStorage.java:195)\n        at org.apache.aurora.scheduler.state.StateManagerImpl.updateTaskAndExternalState(StateManagerImpl.java:326)\n        at org.apache.aurora.scheduler.state.StateManagerImpl.updateTaskAndExternalState(StateManagerImpl.java:246)\n        at org.apache.aurora.scheduler.state.StateManagerImpl.changeState(StateManagerImpl.java:161)\n        at org.apache.aurora.scheduler.cron.quartz.AuroraCronJob$2.execute(AuroraCronJob.java:184)\n        at org.apache.aurora.scheduler.storage.Storage$MutateWork$NoResult.apply(Storage.java:131)\n        at org.apache.aurora.scheduler.storage.Storage$MutateWork$NoResult$Quiet.apply(Storage.java:148)\n        at org.apache.aurora.scheduler.storage.log.LogStorage$24.apply(LogStorage.java:605)\n        at org.apache.aurora.scheduler.storage.log.LogStorage$24.apply(LogStorage.java:602)\n        at org.apache.aurora.scheduler.storage.db.DbStorage.write(DbStorage.java:143)\n        at org.mybatis.guice.transactional.TransactionalMethodInterceptor.invoke(TransactionalMethodInterceptor.java:101)\n        at com.twitter.common.inject.TimedInterceptor.invoke(TimedInterceptor.java:87)\n        at org.apache.aurora.scheduler.storage.log.LogStorage.doInTransaction(LogStorage.java:602)\n        at org.apache.aurora.scheduler.storage.log.LogStorage.write(LogStorage.java:635)\n        at org.apache.aurora.scheduler.storage.CallOrderEnforcingStorage.write(CallOrderEnforcingStorage.java:130)\n        at org.apache.aurora.scheduler.cron.quartz.AuroraCronJob.doExecute(AuroraCronJob.java:180)\n        at org.apache.aurora.scheduler.cron.quartz.AuroraCronJob.execute(AuroraCronJob.java:108)\n        at org.quartz.core.JobRunShell.run(JobRunShell.java:202)\n        ... 1 more\n{noformat}",
+        "points": 5.0
+    },
+    {
+        "story": "Document oversubscription in Aurora",
+        "points": 2.0
+    },
+    {
+        "story": "Scheduler updater should suppress instance events on resume\n\nScheduler updater does not attempt to suppress redundant instance events in case an update is paused/blocked and is subsequently resumed/pulsed. This leads to a useless sequence of no-op instance events, which may quickly consume the allocated event cap (tracked in AURORA-1096). \n\nFor example, an update paused/resumed 2 times after instance 1 is updated will generate the following instance sequence:\n\n1=[INSTANCE_UPDATING, INSTANCE_UPDATED, INSTANCE_UPDATING, INSTANCE_UPDATED, INSTANCE_UPDATING, INSTANCE_UPDATED]",
+        "points": 2.0
+    },
+    {
+        "story": "Remove backwards compatibility shims from JobUpdateKey introduction\n\nAURORA-1093 introduced several shims to support data migration across the 0.8.0 barrier.  These should be removed.\n\n- Remove JobUpdateSummary.updateId and jobKey\n- Remove JobUpdateQuery.updateId\n- Remove recovery-time update id -> update key lookup in LogStorage\n- Remove JobUpdateStore.fetchUpdateKey\n- Remove JobUpdateDetailsMapper.selectUpdateKey\n- Remove SaveJobUpdateEvent.updateId\n- Change {{UNIQUE(update_id)}} constraint to {{UNIQUE(job_key_id, update_id)}}",
+        "points": 3.0
+    },
+    {
+        "story": "API hooks no longer supported for certain client commands\n\nCertain client commands (e.g. job kill, job killall, update start) no longer passing aurora config to their correspondent api calls. This makes it impossible to use API level hooks.",
+        "points": 3.0
+    },
+    {
+        "story": "Referential integrity violation when replaying storage\n\nAt startup in the Vagrant environment I observed:\n\n{noformat}\nE0630 20:45:54.427 THREAD1 org.apache.aurora.scheduler.SchedulerLifecycle$9.execute: Caught unchecked exception: org.apache.aurora.scheduler.storage.Storage$StorageExce\nption: \n### Error updating database.  Cause: org.h2.jdbc.JdbcSQLException: Referential integrity constraint violation: \"CONSTRAINT_4BE: PUBLIC.TASKS FOREIGN KEY(SLAVE_ROW_ID) R\nEFERENCES PUBLIC.HOST_ATTRIBUTES(ID) (1)\"; SQL statement:\nDELETE FROM host_attributes\n    WHERE host = ? [23503-187]\n### The error may involve defaultParameterMap\n### The error occurred while setting parameters\n### SQL: DELETE FROM host_attributes     WHERE host = ?\n### Cause: org.h2.jdbc.JdbcSQLException: Referential integrity constraint violation: \"CONSTRAINT_4BE: PUBLIC.TASKS FOREIGN KEY(SLAVE_ROW_ID) REFERENCES PUBLIC.HOST_ATTR\nIBUTES(ID) (1)\"; SQL statement:\nDELETE FROM host_attributes\n    WHERE host = ? [23503-187]\norg.apache.aurora.scheduler.storage.Storage$StorageException: \n### Error updating database.  Cause: org.h2.jdbc.JdbcSQLException: Referential integrity constraint violation: \"CONSTRAINT_4BE: PUBLIC.TASKS FOREIGN KEY(SLAVE_ROW_ID) R\nEFERENCES PUBLIC.HOST_ATTRIBUTES(ID) (1)\"; SQL statement:\nDELETE FROM host_attributes\n    WHERE host = ? [23503-187]\n### The error may involve defaultParameterMap\n### The error occurred while setting parameters\n### SQL: DELETE FROM host_attributes     WHERE host = ?\n### Cause: org.h2.jdbc.JdbcSQLException: Referential integrity constraint violation: \"CONSTRAINT_4BE: PUBLIC.TASKS FOREIGN KEY(SLAVE_ROW_ID) REFERENCES PUBLIC.HOST_ATTR\nIBUTES(ID) (1)\"; SQL statement:\nDELETE FROM host_attributes\n    WHERE host = ? [23503-187]\n        at org.apache.aurora.scheduler.storage.db.DbStorage.write(DbStorage.java:144)\n        at org.mybatis.guice.transactional.TransactionalMethodInterceptor.invoke(TransactionalMethodInterceptor.java:101)\n        at com.twitter.common.inject.TimedInterceptor.invoke(TimedInterceptor.java:87)\n        at org.apache.aurora.scheduler.storage.log.LogStorage.write(LogStorage.java:632)\n        at org.apache.aurora.scheduler.storage.log.LogStorage$3.execute(LogStorage.java:316)\n        at org.apache.aurora.scheduler.storage.log.LogStorage$3.execute(LogStorage.java:313)\n        at org.apache.aurora.scheduler.storage.log.LogStorage.replay(LogStorage.java:525)\n        at org.apache.aurora.scheduler.storage.log.LogStorage.access$1200(LogStorage.java:116)\n        at org.apache.aurora.scheduler.storage.log.LogStorage$21$1.execute(LogStorage.java:503)\n        at org.apache.aurora.scheduler.storage.log.LogStorage$21$1.execute(LogStorage.java:500)\n        at org.apache.aurora.scheduler.storage.log.StreamManagerImpl.readFromBeginning(StreamManagerImpl.java:127)\n        at org.apache.aurora.scheduler.storage.log.LogStorage$21.execute(LogStorage.java:500)\n        at org.apache.aurora.scheduler.storage.Storage$MutateWork$NoResult.apply(Storage.java:131)\n        at org.apache.aurora.scheduler.storage.db.DbStorage.bulkLoad(DbStorage.java:165)\n        at com.twitter.common.inject.TimedInterceptor.invoke(TimedInterceptor.java:87)\n        at org.apache.aurora.scheduler.storage.log.LogStorage.recover(LogStorage.java:496)\n        at com.twitter.common.inject.TimedInterceptor.invoke(TimedInterceptor.java:87)\n        at org.apache.aurora.scheduler.storage.log.LogStorage$20.execute(LogStorage.java:477)\n        at org.apache.aurora.scheduler.storage.Storage$MutateWork$NoResult.apply(Storage.java:131)\n        at org.apache.aurora.scheduler.storage.Storage$MutateWork$NoResult$Quiet.apply(Storage.java:148)\n        at org.apache.aurora.scheduler.storage.db.DbStorage.write(DbStorage.java:142)\n        at org.mybatis.guice.transactional.TransactionalMethodInterceptor.invoke(TransactionalMethodInterceptor.java:101)\n        at com.twitter.common.inject.TimedInterceptor.invoke(TimedInterceptor.java:87)\n        at org.apache.aurora.scheduler.storage.log.LogStorage.write(LogStorage.java:632)\n        at org.apache.aurora.scheduler.storage.log.LogStorage.start(LogStorage.java:471)\n        at org.apache.aurora.scheduler.storage.CallOrderEnforcingStorage.start(CallOrderEnforcingStorage.java:92)\n        at org.apache.aurora.scheduler.SchedulerLifecycle$6.execute(SchedulerLifecycle.java:252)\n{noformat}",
+        "points": 2.0
+    },
+    {
+        "story": "Create JobKey-scoped Permissions and apply to AuroraSchedulerManager\n\nhttps://reviews.apache.org/r/31820/ added support for coarse-grained permissions based on the thrift API method name. Support finer-grained permissions scoped down to the job\n\nFor example calls to\n\n{code}\nauroraSchedulerManager.descheduleCronJob(JobKey(role='ksweeney', environment='prod', name='download_lunch_menu'), None, None)\n{code}\n\ncurrently check for the {{thrift.AuroraSchedulerManager:descheduleCronJob}} Permission when they should check for the {{thrift.AuroraSchedulerManager:descheduleCronJob:ksweeney:prod:download_lunch_menu}} Permission.",
+        "points": 5.0
+    },
+    {
+        "story": "Preemptor should export more detailed statistics\n\nRight now the scheduler exports general counters for preemption attempts that don't break out production vs. non-production attempts. Since the preemptor currently has no action available when asked to preempt a nonproduction task, it will show a 100% failure rate. Export counters for preemptions attempted in favor of production tasks and their successes and failures.",
+        "points": 3.0
+    },
+    {
+        "story": "Quota checks are inaccurate for cron schedule updates\n\nCron job resources are treated as an addition rather than a replacement during cron schedule update. This leads to double counting of the updated schedule, which creates a problem when a role is hovering around its quota limit. We need a new API in the QuotaManager to properly handle this case. Something like {{QuotaManager.checkCronUpdate()}} that would properly subtract existing cron schedule consumption before comparing against quota.",
+        "points": 3.0
+    },
+    {
+        "story": "Implement getJobUpdateDiff API without TaskConfig diff support",
+        "points": 3.0
+    },
+    {
+        "story": "Simplify the Aurora Python build\n\nTBD [~wickman]",
+        "points": 13.0
+    },
+    {
+        "story": "0.7.0 Release Candidate",
+        "points": 3.0
+    },
+    {
+        "story": "Centralize offer/task matching implementation in TaskAssigner\n\nFrom design doc:\n{quote}\nThe implementation will greatly benefit from refactoring the current OfferManager.acceptOffer() functionality first to move all offer/task matching logic into the TaskAssigner.\n{quote}",
+        "points": 5.0
+    },
+    {
+        "story": "Client binding_helper to resolve docker label to a stable ID at create\n\nFollow-up from discussion on IRC:\n\nSome docker labels are mutable, meaning the image a task runs in could change from restart to restart even if the rest of the task config doesn't change. This breaks assumptions that make rolling updates the safe and preferred way to deploy a new Aurora job\n\nAdd a binding helper that resolves a docker label to an immutable image identifier at create time and make it the default for the Docker helper introduced in https://reviews.apache.org/r/28920/",
+        "points": 5.0
+    },
+    {
+        "story": "Update quota documentation",
+        "points": 1.0
+    },
+    {
+        "story": "Update gc executor to read checkpoint stream from sandbox\n\nThis is an intermediate step necessary to retire the gc executor.  See AURORA-1024.",
+        "points": 3.0
+    },
+    {
+        "story": "H2-backed implementation of JobStore",
+        "points": 3.0
+    },
+    {
+        "story": "MemTaskStore: items are not removed from secondary index\n\nAn updated PMD flagged this bug (see output below).\n\nThis line:\n{code}\nindex.remove(key, task);\n{code}\n\nshould be:\n{code}\nindex.remove(key, Tasks.id(task));\n{code}\n\n{noformat}\nCode\tWarning\nGC\torg.apache.aurora.scheduler.storage.entities.IScheduledTask is incompatible with expected argument type String in org.apache.aurora.scheduler.storage.mem.MemTaskStore$SecondaryIndex.remove(IScheduledTask)\nBug type GC_UNRELATED_TYPES (click for details) \nIn class org.apache.aurora.scheduler.storage.mem.MemTaskStore$SecondaryIndex\nIn method org.apache.aurora.scheduler.storage.mem.MemTaskStore$SecondaryIndex.remove(IScheduledTask)\nActual type org.apache.aurora.scheduler.storage.entities.IScheduledTask\nExpected String\nCalled method com.google.common.collect.Multimap.remove(Object, Object)\nInvoked on org.apache.aurora.scheduler.storage.mem.MemTaskStore$SecondaryIndex.index\ntask passed as argument\norg.apache.aurora.scheduler.storage.entities.IScheduledTask.equals(Object) used to determine equality\nAt MemTaskStore.java:[line 399]\n{noformat}",
+        "points": 2.0
+    },
+    {
+        "story": "Remove GC executor code",
+        "points": 4.0
+    },
+    {
+        "story": "make-python-sdists failing on master\n\nCommit 9791efc0a88dd0917dc45cb38d78255e3949e886 broke building the thermos client in make-python-sdists:\n\n{code}\n               Executing tasks in goals: setup-py\n17:01:03 00:00   [setup-py]\n17:01:03 00:00     [setup-py]\n                   /home/vagrant/aurora/dist/apache.thermos.z8KZGZ/src/apache/thermos/cli/common.py is source but does not belong to a package.\n                   /home/vagrant/aurora/dist/apache.thermos.z8KZGZ/src/apache/thermos/cli/main.py is source but does not belong to a package.\n                   /home/vagrant/aurora/dist/apache.thermos.z8KZGZ/src/apache/thermos/cli/commands/read.py is source but does not belong to a package.\n                   /home/vagrant/aurora/dist/apache.thermos.z8KZGZ/src/apache/thermos/cli/commands/inspect.py is source but does not belong to a package.\n                   /home/vagrant/aurora/dist/apache.thermos.z8KZGZ/src/apache/thermos/cli/commands/help.py is source but does not belong to a package.\n                   /home/vagrant/aurora/dist/apache.thermos.z8KZGZ/src/apache/thermos/cli/commands/simplerun.py is source but does not belong to a package.\n                   /home/vagrant/aurora/dist/apache.thermos.z8KZGZ/src/apache/thermos/cli/commands/kill.py is source but does not belong to a package.\n                   /home/vagrant/aurora/dist/apache.thermos.z8KZGZ/src/apache/thermos/cli/commands/run.py is source but does not belong to a package.\n                   /home/vagrant/aurora/dist/apache.thermos.z8KZGZ/src/apache/thermos/cli/commands/gc.py is source but does not belong to a package.\n                   /home/vagrant/aurora/dist/apache.thermos.z8KZGZ/src/apache/thermos/cli/commands/status.py is source but does not belong to a package.\n                   /home/vagrant/aurora/dist/apache.thermos.z8KZGZ/src/apache/thermos/cli/commands/tail.py is source but does not belong to a package.\n                   /home/vagrant/aurora/dist/apache.thermos.z8KZGZ/src/apache/thermos/cli/bin/thermos.py is source but does not belong to a package.\n               FAILURE\n\nException message: Invalid target PythonLibrary(BuildFileAddress(/home/vagrant/aurora/src/main/python/apache/thermos/BUILD, thermos)): Cannot add a binary to a PythonArtifact if it does not contain an entry_point.\n{code}",
+        "points": 1.0
+    },
+    {
+        "story": "Improve client error messages for Kerberos errors\n\nCurrently Kerberos errors are presented as a stack trace to the user looking something like:\n\n{noformat}\nGSSError: (('Unspecified GSS failure.  Minor code may provide more information', 851968), ('No Kerberos credentials available', -1765328243))\n401 Client Error: Authorization Required\n{noformat}\n\n(And similar for expired tickets). It would be helpful to catch these and display more useful information, such as a suggestion to run {{kinit}}.",
+        "points": 2.0
+    },
+    {
+        "story": "shiro.ini with blank users section fails to parse.\n\nThe scheduler does not accept a shiro.ini file with a blank `[users]` section. This is a legitimate use, as the definitions of users could be provided by another Realm (for example a Kerberos realm).",
+        "points": 1.0
+    },
+    {
+        "story": "Replace libmesos w/ Pesos\n\nReplace the libmesos native dependency with [Pesos|https://github.com/wickman/pesos], to simplify the build and reduce memory footprint.",
+        "points": 13.0
+    },
+    {
+        "story": "Update upstart configurations when syncing sources\n\nIn the vagrant environment, we perform a step where we copy the upstart configurations to /etc/init \\[1\\].  The way this is done makes it challenging to change the upstart configurations later, the easiest way being to destroy and re-create the environment.  Consider updating these files that their definitions are updated by rsync along with other code.\n\n\n\n\\[1\\] https://github.com/apache/incubator-aurora/blob/ad211da2f2490722a10cce95a2bb4fb55fd1c16f/examples/vagrant/provision-dev-cluster.sh#L60-L61",
+        "points": 2.0
+    },
+    {
+        "story": "Modify scheduler updater to not use \"watch_secs\" for health-check enabled jobs\n\nWhen health checks are enabled in a job config, scheduler updater should ignore \"watch_secs\" UpdateConfig value.",
+        "points": 5.0
+    },
+    {
+        "story": "Modify UpdateConfig schema to support heartbeats\n\nExpose {{pulse_interval_secs}} in the UpdateConfig schema to support user configuration of coordinated updates.\n\nDiscussion thread here: http://mail-archives.apache.org/mod_mbox/incubator-aurora-dev/201501.mbox/%3CCAOTkfX6%2BmKNryWEdDc9e0N_Chz_mQbB20Cyj_xdj6k2%3DsxJ-LQ%40mail.gmail.com%3E",
+        "points": 2.0
+    },
+    {
+        "story": "Wire in SPNEGO HTTP module\n\nWire in SPNEGO HTTP module, expose as flags in ShiroAuthModule.",
+        "points": 5.0
+    },
+    {
+        "story": "Remove quota enforcement for dedicated jobs",
+        "points": 3.0
+    },
+    {
+        "story": "Releasing the update lock trips off scheduler updater\n\nHere is the faulty sequence:\n- User starts a scheduler job update and pauses while it's still in progress\n- User runs \"aurora job cancel-update\" command thus releasing the update lock\n- User starts a new scheduler job update\n\nAt this point, any attempt to abort or pause an active update results in the following error [1]:\n{noformat}\nvagrant@vagrant-ubuntu-trusty-64:~$ aurora beta-update abort devcluster/www-data/prod/hello\n INFO] Aborting update for: devcluster/www-data/prod/hello\nFailed to abort update due to error:\n\texpected one element but was: <JobUpdateSummary(updateId:4b7fdc14-428f-44e4-9261-908b606f47e2, jobKey:JobKey(role:www-data, environment:prod, name:hello), user:UNSECURE, state:JobUpdateState(status:ROLLING_FORWARD, createdTimestampMs:1421450382234, lastModifiedTimestampMs:1421450382234)), JobUpdateSummary(updateId:3c9c2fa2-8e51-4c13-8440-94364205a37b, jobKey:JobKey(role:www-data, environment:prod, name:hello), user:UNSECURE, state:JobUpdateState(status:ROLL_FORWARD_PAUSED, createdTimestampMs:1421450304935, lastModifiedTimestampMs:1421450324055))>\n{noformat}\n\nThe only way to recover from this state is either wait for the active job update to reach terminal state or force it to it by running another cancel-update.\n\nWhile the \"cancel-update\" will eventually go away with the client updater, we do have a problem during the migration period. A possible (though ugly) short-term workaround could be calling \"abortJobUpdate\" from the \"releaseLock\" RPC.\n\n[1] - https://github.com/apache/incubator-aurora/blob/master/src/main/java/org/apache/aurora/scheduler/updater/JobUpdateControllerImpl.java#L295-L296",
+        "points": 5.0
+    },
+    {
+        "story": "UpdateStoreBenchmarks broken\n\nBroken by AURORA-1305, as DbModule now requires a StatsProvider binding, which UpdateStoreBenchmarks lacks.",
+        "points": 1.0
+    },
+    {
+        "story": "Remove blanket 'Error executing command: ' prefix from client output\n\nWhen `CommandError` is caught in the client, it prints a generic error prefix, which is not helpful.  We should strive to make our error messages contextual and stand on their own.",
+        "points": 1.0
+    },
+    {
+        "story": "beta-update list should use a hierarchy for query specifications\n\n{noformat}\n$ aurora beta-update list -h\nusage: aurora beta-update list [-h] [--job CLUSTER/ROLE/ENV/NAME]\n                               [--role ROLENAME] [--user username]\n                               [--status {ROLLED_BACK,ROLL_FORWARD_PAUSED,ROLL_FORWARD_AWAITING_PULSE,ERROR,ROLLING_BACK,ROLLING_FORWARD,ROLLED_FORWARD,ROLL_BACK_PAUSED,FAILED,ABORTED,ROLL_BACK_AWAITING_PULSE}]\n                               [--write-json] [--verbose]\n                               [--skip-hooks hook,hook,...]\n                               clustername\n{noformat}\n\nThis means that to query for updates for a specific, job, one must use a command like this:\n\n{noformat}\n$ aurora beta-update list --job devcluster/vagrant/test/http_example devcluster\n{noformat}\n\nIn addition to being redundant, this is less user-friendly than the hierarchical syntax we use in other places.\n\nI suggest we change the client to drop the job and role options, and instead support commands like:\n\n{noformat}\naurora beta-update list cluster\naurora beta-update list cluster/role\naurora beta-update list cluster/role/env\naurora beta-update list cluster/role/env/job\n{noformat}",
+        "points": 3.0
+    },
+    {
+        "story": "Differentiate between dynamic and static vetoes\n\nWe're making a decent effort at reducing the _cost_ of task scheduling operations, abut have not yet invested in reducing the working set in a way that causes task scheduling to scale better.  Each scheduling attempt for each task is an O(n) operation, where n is the number of offers.\n\nI would like to explore optimizations where we try to reduce the amount of redundant work performed in task scheduling.  Say, for example, we're trying to schedule a task that needs 2 CPUs, and we only have offers with 1 CPU.  Each scheduling round will re-assess every offer, despite the fact that the offers have not changed shape, and will always be a mismatch (hereafter termed _static_ mismatches).  Instead, we should try to skip over offers that are a static mismatch.  We could do this at the {{TaskGroup}} level, since every element in a task group is by definition statically equivalent.  This means that jobs with a large number of instances could be scheduled very efficiently, since the first task scheduling round could identify static mismatches, reducing the working set in the next round.\n\nThis is to contrast with _dynamic_ mismatches, where a change in the tasks on a machine or other settings could make a previously-ineligible offer become a match.  The current sources of dynamic mismatches are limit constraints, host maintenance modes, and dedicated attributes.\n\nI propose we proceed in several steps, re-evaluating after each:\n1. instrument the scheduler to better estimate the improvements\n2. avoid future (offer, task group) evaluations when static mismatches are found\n3. avoid future (offer, task group) evaluations when dynamic mismatches are found",
+        "points": 8.0
+    },
+    {
+        "story": "Set up vagrant environment for sudo-less docker commands\n\nOur vagrant development box has docker installed, but we should take the extra steps to run docker commands without {{sudo}}.  \n\nSee commands required here: http://askubuntu.com/questions/477551/how-can-i-use-docker-without-sudo/477554#477554",
+        "points": 1.0
+    },
+    {
+        "story": "Remove GCExecutorLauncher code",
+        "points": 3.0
+    },
+    {
+        "story": "It should be possible to link to an instance from the update page\n\nE.g. if an instance ran into issues during an update it would be great to be able to link directly to it to investigate the problem (rather than having to go to the job paging and tracking it down in the list of completed tasks).",
+        "points": 1.0
+    },
+    {
+        "story": "Optimize or remove shard uniqueness check from StorageBackfill\n\nWe have noticed that during scheduler startup, the operation, there can be a significant amount of time spent between the following log lines:\n\n{noformat}\nPerforming shard uniqueness sanity check.\nstorage state machine transition PREPARED -> READY\n{noformat}\n\nLooking at what happens in the scheduler between those points, the expensive operation seems to be {{guaranteeShardUniqueness}}.\n\nThis operation aims to validate the integrity of the storage, but its value is dubious.  There are many other things that could be done to validate integrity, but they should probably not be done every time the scheduler loads its database.\n\nIf the operation is kept, it can be dramatically optimized.  It currently performs an O(n^2) scan of tasks, and this could trivially be reduced to O\\(n\\).",
+        "points": 2.0
+    },
+    {
+        "story": "Move build-support/packaging to aurora-packaging repo\n\nNew repo: https://git-wip-us.apache.org/repos/asf/aurora-packaging.git\n\nGoal is to pull source and history of {{build-support/packaging}} to the new repo, and delete it from the source repo.",
+        "points": 2.0
+    },
+    {
+        "story": "Add end-to-end test coverage for async updates\n\nOur end-to-end test doesn't exercise scheduler-orchestrated job updates at all.",
+        "points": 3.0
+    },
+    {
+        "story": "Export TASK_LOST source stats from Scheduler\n\nUse the source and reason fields that are included in status updates (circa mesos 0.21) to produce log messages and exported counters.\n\n\nhttp://mesos.apache.org/blog/mesos-0-21-0-released/",
+        "points": 5.0
+    },
+    {
+        "story": "shutdown_endpoint fields should be in the aurora schema\n\nCommit ea2c9ad24ce adds graceful_shutdown_endpoint and shutdown_endpoint onto the thermos Task object, but Thermos is completely unaware of the http lifecycle.  This should either go onto the Job or HealthCheck objects or be added as a separate enumeration on the Job.",
+        "points": 2.0
+    },
+    {
+        "story": "Support Mesos TASK_ERROR state\n\n0.21.0 introduced a TASK_ERROR state. Support this in the scheduler code (either by aliasing it to the existing TASK_LOST state or creating a new state machine entry).",
+        "points": 2.0
+    },
+    {
+        "story": "PreemptorService failure does not trigger shutdown\n\nWhile observing AURORA-1510 in production I noticed the bug caused the {{PreemptorService}} to transition to the FAILED state. The {{/services}} endpoint had:\n{noformat}\n{\nname: \"PreemptorService\",\nstate: \"FAILED\",\nfailureCause: \"java.util.ConcurrentModificationException\"\n},\n{noformat}\n\nHowever the scheduler continued to run. I believe this is a bug.",
+        "points": 2.0
+    },
+    {
+        "story": "Add a deprecation warning when the client-side updater is used\n\nThis feature is being deprecated in 0.8.0, removed in 0.9.0",
+        "points": 2.0
+    },
+    {
+        "story": "Refactor the scheduler to allow authenticated subject-per-request\n\n* Make SchedulerThriftInterface @RequestScoped\n* Make CapabilityValidator @RequestScoped\n* Move creation of all servlets into the GuiceServletContextListener Injector",
+        "points": 2.0
+    },
+    {
+        "story": "Python style checker should only report errors\n\nWhen running our top-level build script (./build-support/jenkins/build.sh), style check results are reported for python files.  This output is too verbose, as it reports {{SUCCESS}} for all files that pass style check.  Change this output to only report errors.\n\nIn particular, this will make for more direct build result messages from build bot.  A counter-example is the current state, as seen in https://reviews.apache.org/r/36392/",
+        "points": 2.0
+    },
+    {
+        "story": "remove legacy remnants of \"aurora\" executor\n\ne.g. in {{src/main/python/apache/aurora/client/api/command_runner.py}} - {{aurora_sandbox}}, {{substitute_aurora}}, etc",
+        "points": 1.0
+    },
+    {
+        "story": "Create nightly builds\n\nIt would be great if we had a Jenkins job that vetted the current state of master and published a nightly build.\n\nThis would make life easier for folks deploying Aurora from master rather than the (currently anemic) released builds.",
+        "points": 3.0
+    },
+    {
+        "story": "Scheduling vetos are only displayed for the first task in a TaskGroup\n\nWhen a task fails to schedule due not passing a resource or constraint {{Veto}} the entire {{TaskGroup}} is penalized but only the first task gets Veto reasons set. That leads to the UI displaying something like \"Insufficient disk\" veto reason only for one instance out of the similar pool of PENDING tasks. \n\nConsider sharing a {{Veto}} reason for all tasks in a group for improved troubleshooting and visibility.",
+        "points": 3.0
+    },
+    {
+        "story": "auth_module is not installed in child injector\n\nThe recent patch to enable HTTP Basic Authentication moved construction of ThriftAuthModule to the Jetty child injector, but the user-supplied module was still installed in the parent injector. This leads to a stack trace for anyone using their own {{auth_module}}:\n\n{noformat}\nINFO: Connecting to master using authentication (principal: TwitterScheduler).\nException in thread \"main\" com.google.inject.CreationException: Guice creation errors:\n\n1) No implementation for java.util.Map<org.apache.aurora.auth.CapabilityValidator$Capability, java.lang.String> was bound.\n  while locating java.util.Map<org.apache.aurora.auth.CapabilityValidator$Capability, java.lang.String>\n    for parameter 1 at com.twitter.aurora.internal.auth.TwitterCapabilityValidator.<init>(TwitterCapabilityValidator.java:28)\n  at com.twitter.aurora.internal.auth.TwitterAuthModule.configure(TwitterAuthModule.java:97)\n\n2) No implementation for java.util.Map<org.apache.aurora.auth.CapabilityValidator$Capability, java.lang.String> was bound.\n  at com.twitter.aurora.internal.auth.TwitterAuthModule.configure(TwitterAuthModule.java:94)\n\n2 errors\n        at com.google.inject.internal.Errors.throwCreationExceptionIfErrorsExist(Errors.java:435)\n        at com.google.inject.internal.InternalInjectorCreator.initializeStatically(InternalInjectorCreator.java:154)\n        at com.google.inject.internal.InternalInjectorCreator.build(InternalInjectorCreator.java:106)\n        at com.google.inject.Guice.createInjector(Guice.java:95)\n        at com.google.inject.Guice.createInjector(Guice.java:83)\n        at com.twitter.common.application.AppLauncher.configureInjection(AppLauncher.java:120)\n        at com.twitter.common.application.AppLauncher.run(AppLauncher.java:87)\n        at com.twitter.common.application.AppLauncher.launch(AppLauncher.java:181)\n        at com.twitter.common.application.AppLauncher.launch(AppLauncher.java:142)\n        at org.apache.aurora.scheduler.app.SchedulerMain.main(SchedulerMain.java:279)\n{noformat}",
+        "points": 2.0
+    },
+    {
+        "story": "Add ShiroAopModule, shiro AOP @RequiresPermissions annotations\n\nAlso:\n* Deprecate CapabilityValidator and its annotations and interceptors\n* Deprecate UnsecureAuthModule. \n* Deprecate SessionKey arguments in Thrift API.",
+        "points": 3.0
+    },
+    {
+        "story": "Improve preemptor efficiency\n\nWhile AURORA-1158 makes the preemptor asynchronous and helps scheduling loop performance, it loses some preemption efficiency due to adapting the original algorithm to work asynchronously:\n- Preemptor repeatedly searches for preemption slots with the same ClusterState increasing the probability of victim collisions. \n- Slave/offer/resource mappings are redundantly recomputed for every pending task slot search.\n- Pending tasks are repeatedly sized up against every slave (as opposed to the other way around) making internal loop optimizations more expensive (i.e. pending task count is expected to be << slave count under normal conditions).",
+        "points": 5.0
+    },
+    {
+        "story": "Ignore revocable resources in preemptor\n\nFrom design doc:\n{quote}\nPreemptor needs to ignore best effort task resources when searching for preemption slots.\n{quote}",
+        "points": 2.0
+    },
+    {
+        "story": "apache.aurora.executor.common.HealthChecker should export stats\n\nRight now the HealthChecker status checker exports no stats.  It would be useful for things like number of consecutive health failures and most recent health check latency to be exported on a per task basis so that they could be monitored.",
+        "points": 1.0
+    },
+    {
+        "story": "Implement TierManager to translate tiers to task traits\n\nFrom design doc:\n{quote}\nScheduler will have a new TierManager module translating the task tier into the correspondent set of traits. Initial implementation will statically define test, devel, staging tier values as revocable. \n{quote}",
+        "points": 3.0
+    },
+    {
+        "story": "Update observer to read checkpoint stream from sandbox\n\nSee AURORA-2014.",
+        "points": 5.0
+    },
+    {
+        "story": "Upgrade to gradle 2.4\n\nGradle 2.4 is out.  Among other things, it claims to offer improved performance:\n\nhttp://gradle.org/docs/2.4/release-notes",
+        "points": 2.0
+    },
+    {
+        "story": "Scheduler fails to start due to thrift/SQL schema data type mismatch\n\nAfter https://reviews.apache.org/r/38288 we are unable to upgrade scheduler in one of our clusters due to the following failure on restart:\n{noformat}\n### Cause: org.h2.jdbc.JdbcSQLException: Numeric value out of range: \"3174400000031744\"; SQL statement:\nINSERT INTO task_configs (\n      job_key_id,\n      creator_user,\n      service,\n      num_cpus,\n      ram_mb,\n      disk_mb,\n      priority,\n      max_task_failures,\n      production,\n      contact_email,\n      executor_name,\n      executor_data,\n      tier\n    ) VALUES (\n      (\n        SELECT ID\n        FROM job_keys\n        WHERE role = ?\n          AND environment = ?\n          AND name = ?\n      ),\n      ?,\n      ?,\n      ?,\n      ?,\n      ?,\n      ?,\n      ?,\n      ?,\n      ?,\n{noformat}\n\nThis appears due to type mismatch between TaskConfig.diskMb (i64) and task_configs.disk_mb (INT). \n\nA possible real-life scenario:\n- user creates a job with an oversized resource requirement and the job fails to schedule\n- user realizes the mistake and attempts to correct it by running {{aurora update start}}\n- scheduler creates an instance of the JobUpdate with the oversized TaskConfig as its initial state and persists it in the log\n- scheduler restarts to a new version (with the patch above) and attempts to reload job updates from the log but now instead of storing TaskConfigs as binary blobs it attempts to insert into task_configs table where resource columns have narrower type.",
+        "points": 3.0
+    },
+    {
+        "story": "INSTANCES_SPEC_ARGUMENT client option does not validate instance range\n\nAn of order instance range (e.g. \"/10-2\") results in empty list of instances. In case of a scheduler updater this leads to updating the entire job instead of specific instances.\n\nThe offending line: https://github.com/apache/aurora/blob/439a168f9cdd6fe58a12009b51bedad4ac152948/src/main/python/apache/aurora/client/cli/options.py#L74",
+        "points": 2.0
+    },
+    {
+        "story": "Implement pulseJobUpdates RPC\n\nImplement pulseJobUpdates RPC to support external service heartbeats.\n\nSee [1] for more details.\n\n[1] - https://github.com/maxim111333/incubator-aurora/blob/hb_doc/docs/update-heartbeat.md",
+        "points": 2.0
+    },
+    {
+        "story": "Improve procedure for adding instances to a job\n\nThe current process for adding instances to a job is highly manual, and potentially dangerous.\n\n1. Take a config for a job with 10 instances, update it to 20 instances.\n2. The batch size will be increased, and users will need to specify shards 10 to 19.\n3. After this update is complete, users will need to manually update shards 0-9 again.\n\nThere may be other changes pulled in as part of this update other than just increasing the number of instances, which could further complicate things.\n\nOne possible improvement would be to change the updater from 'under-provision' where it kills instances first, then schedules new instances, to an 'over-provision' where it adds on new instances, then backpedals and kills the old instances.\n\nOverall, a single command or process for a user to take an already-existing job and increase the number of instances would reduce overhead and fat-fingering.",
+        "points": 8.0
+    },
+    {
+        "story": "Schema changes to support revocable jobs",
+        "points": 3.0
+    },
+    {
+        "story": "Scheduler in-memory DB needs a direct console access\n\nWe need a direct way of getting to scheduler SQL data for troubleshooting and ad-hoc analysis purposes. Consider adding support for H2 web console: http://www.h2database.com/html/quickstart.html. \n\nThe ideal solution should have a way to expose data in read-only and read-write mode depending on the connection/credential settings.",
+        "points": 5.0
+    },
+    {
+        "story": "Implement API for dual reading Thermos checkpoints\n\nTBD by @wickman",
+        "points": 8.0
+    },
+    {
+        "story": "Transaction isolation on DB stores is too strict\n\nThe transaction isolation used in the scheduler's DB-based storage is too strict.  This results in inconsistent data when work in a transaction forks asynchronous work on a different thread, which is implicitly done for messages on the event bus.  In cases like {{TaskThrottler}} which has some preconditions around expected state, we encounter exceptions related to the ancestor state not yet being shown as terminated as we try to calculate the reschedule delay.",
+        "points": 2.0
+    },
+    {
+        "story": "Remove duplicate thermos_observer\n\nThere are currently two thermos_observer python_binaries in the codebase, one in src/main/python/apache/aurora/tools/BUILD and the other in ./src/main/python/apache/thermos/observer/bin/BUILD. This is confusing.\n\nLet's get rid of one of them, I think the latter is the one that's not meant to be used.",
+        "points": 2.0
+    },
+    {
+        "story": "Modify resource counters to support revocable slot counters",
+        "points": 3.0
+    },
+    {
+        "story": "The scheduler synchronously writes a backup while writing a snapshot to the replicated log\n\nIn the course of writing a snapshot to the replicated log, the scheduler may block while writing a snapshot to the disk.  There is no need for this activity to be done synchronously, and doing so causes the write lock to be unnecessarily held for an additional period of time.\n\nFrom StorageBackup.java:\n{code}\n    @Override\n    public Snapshot createSnapshot() {\n      Snapshot snapshot = delegate.createSnapshot();\n      if (clock.nowMillis() >= (lastBackupMs + backupIntervalMs)) {\n        save(snapshot);\n      }\n      return snapshot;\n    }\n{code}\n\n{{StorageBackup}} happens to be the unqualified binding to {{SnapshotStore<Snapshot>}} that is used in {{LogStorage}}.",
+        "points": 3.0
+    },
+    {
+        "story": "Make DbTaskStore suitable for use in production\n\nThe DbTaskStore implementation has so far only targeted behavioral compliance with InMemTaskStore.  Use benchmarks to determine areas that require perf improvements and address them.  Also address relevant TODOs that should be production showstoppers.",
+        "points": 5.0
+    },
+    {
+        "story": "Upgrade requests-kerberos to 0.7.0\n\nThis fixes an issue where the client can infinitely recurse when it gets a 401 but does not have a Kerberos TGT in its cache.",
+        "points": 1.0
+    },
+    {
+        "story": "Provide a web UI page to show history for a specific job instance\n\nWe currently have dashboard pages for every level of our logical system hierarchy except for \"instance\".\n\nAdding this page would be useful for sifting through completed tasks in the scope of a specific instance id.",
+        "points": 5.0
+    },
+    {
+        "story": "Allow message to be stored with update write events\n\nIt would be helpful to allow people to pass simple messages to updater actions such as pause and abort, so that the update event log would be more useful. \n\nThis would require modifying the RPC to take an extra message parameter, wiring it into the DB schema and then exposing it to the client/UI.",
+        "points": 3.0
+    },
+    {
+        "story": "Update smart table version to latest\n\nOur version of smart table is out of date and has drifted pretty drastically from the latest. We should update!",
+        "points": 5.0
+    },
+    {
+        "story": "Docker patch created incompatible ExeuctorInfo changes for GC executor\n\nThe [docker patch| https://reviews.apache.org/r/28920/diff/] changed the ExecutorInfo of the GC executor. This causes the mesos slave to fail to launch the GC task with the following error:\n\n{noformat}\nI0130 21:50:05.373389 50869 master.cpp:3441] Sending status update TASK_LOST (UUID: 82ef615c-0d59-4427-95d5-80cf0e52b3fc) for task system-gc-c89c0c05-200c-462e-958a-ecd7b9a76831 of framework 201103282247-0000000019-0000 'Task has invalid ExecutorInfo (existing ExecutorInfo with same ExecutorID is not compatible).\n{noformat}\n\nThe root of this appears to be setting the shell attribute in the ExecutorInfo to be true when it was unset before.",
+        "points": 1.0
+    },
+    {
+        "story": "Expose blockIfNoPulseAfterMs setting in updateSettings.html\n\nThe update UI needs to expose the coordinated update settings.",
+        "points": 1.0
+    },
+    {
+        "story": "Scheduler updates should be uniquely identified by jobKey + updateId\n\nWe should generalize the approach of dealing with scheduler updates by always uniquely identifying them by a new composite key that includes both jobKey and the updateId, e.g.:\n{noformat}\nstruct JobUpdateKey {\n  1: JobKey jobKey\n  2: string updateId\n}\n{noformat}\n\nThe above approach would benefit us long term when it comes to implementing a fully functional REST API. Having both job key and update ID components in the URL will help us logically split authorization and application data layers. \n\nE.g.: in {{/api/updates/role/env/name/updateId}} the {{/role/env/name}} may be used for authorization whereas the {{updateId}} will remove the ambiguity from the data lookup.",
+        "points": 8.0
+    },
+    {
+        "story": "Make update status command more versatile\n\nThe {{aurora update status}} command is rather restrictive, only showing information about in-flight updates.  This command would be more useful if it could allow the same output for arbitrary updates (which can be discovered through {{aurora update list}}.\n\nTo make the name match the new behavior, i propose we name this command {{info}}.",
+        "points": 2.0
+    },
+    {
+        "story": "Surface revoked task reason in the UI\n\nNeed to investigate if fixing AURORA-1193 is still necessary to surface revoked (LOST) task status reason in the UI.",
+        "points": 3.0
+    },
+    {
+        "story": "Allow specifying a shorthand for \"well-known\" Module FQCNs\n\nRight now you have to type some pretty verbose stuff to setup security.\n\n{noformat}\n-shiro_realm_modules=org.apache.aurora.scheduler.http.api.security.Kerberos5ShiroRealmModule,org.apache.aurora.scheduler.http.api.security.IniShiroRealmModule,com.example.CustomRealmModule\n{noformat}\n\nThis is ugly and not very refactor-safe. Consider adding mappings for well-known names, with fallback to FQCNs.\n\nThus, the previous example could become\n{noformat}\n-shiro_realm_modules=KERBEROS5_AUTHN,INI_AUTHNZ,com.example.CustomRealmModule\n{noformat}\n\nThis points out one possible weird misconfiguration:\n\n{noformat}\n-shiro_realm_modules=KERBEROS5_AUTHN,INI_AUTHNZ\n-http_authentication_mechanism=BASIC\n{noformat}\n\nwill leave the Kerberos code completely dark and pass the Basic auth credentials to IniRealm. Thus, as a followup we should probably create separate INI_AUTHN and INI_AUTHZ realms that will only participate in one phase.",
+        "points": 1.0
+    },
+    {
+        "story": "ConcurrentModificationException in PreemptorService\n\nOn the latest master code:\n{noformat}\nE1001 03:41:58.910 THREAD595 com.google.common.util.concurrent.ServiceManager$ServiceListener.failed: Service PreemptorService [FAILE\nD] has failed in the RUNNING state.\njava.util.ConcurrentModificationException\n        at java.util.HashMap$HashIterator.nextNode(HashMap.java:1429)\n        at java.util.HashMap$EntryIterator.next(HashMap.java:1463)\n        at java.util.HashMap$EntryIterator.next(HashMap.java:1461)\n        at com.google.common.collect.AbstractMapBasedMultimap$KeySet$1.next(AbstractMapBasedMultimap.java:936)\n        at java.util.Collections$UnmodifiableCollection$1.next(Collections.java:1042)\n        at com.google.common.collect.Iterators$5.next(Iterators.java:558)\n        at com.google.common.collect.Iterators.addAll(Iterators.java:362)\n        at com.google.common.collect.Sets.newHashSet(Sets.java:238)\n        at com.google.common.collect.Sets.newHashSet(Sets.java:218)\n        at org.apache.aurora.scheduler.preemptor.PendingTaskProcessor$1.apply(PendingTaskProcessor.java:134)\n        at org.apache.aurora.scheduler.preemptor.PendingTaskProcessor$1.apply(PendingTaskProcessor.java:119)\n        at org.apache.aurora.scheduler.storage.db.DbStorage.read(DbStorage.java:138)\n        at org.mybatis.guice.transactional.TransactionalMethodInterceptor.invoke(TransactionalMethodInterceptor.java:101)\n        at org.apache.aurora.common.inject.TimedInterceptor.invoke(TimedInterceptor.java:84)\n        at org.apache.aurora.scheduler.storage.log.LogStorage.read(LogStorage.java:659)\n        at org.apache.aurora.scheduler.storage.CallOrderEnforcingStorage.read(CallOrderEnforcingStorage.java:115)\n        at org.apache.aurora.scheduler.preemptor.PendingTaskProcessor.run(PendingTaskProcessor.java:119)\n        at org.apache.aurora.scheduler.preemptor.PreemptorModule$PreemptorService.runOneIteration(PreemptorModule.java:148)\n        at com.google.common.util.concurrent.AbstractScheduledService$1$1.run(AbstractScheduledService.java:174)\n        at com.google.common.util.concurrent.Callables$3.run(Callables.java:95)\n        at java.util.concurrent.Executors$RunnableAdapter.call(Executors.java:511)\n        at java.util.concurrent.FutureTask.runAndReset(FutureTask.java:308)\n        at java.util.concurrent.ScheduledThreadPoolExecutor$ScheduledFutureTask.access$301(ScheduledThreadPoolExecutor.java:180)\n        at java.util.concurrent.ScheduledThreadPoolExecutor$ScheduledFutureTask.run(ScheduledThreadPoolExecutor.java:294)\n        at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1142)\n        at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:617)\n        at java.lang.Thread.run(Thread.java:745)\n{noformat}",
+        "points": 2.0
+    },
+    {
+        "story": "Remove redundant page header text\n\nThe scheduler web interface has a breadcrumb:\n{noformat}\nHome Role: www-data  Environment: devel  Job: hello_world\n{noformat}\n\nAnd a large heading:\n{noformat}\nJob hello_world in role www-data and environment devel\n{noformat}\n\nConsider removing the heading text, as it consumes a lot of real-estate, and is redundant to the breadcrumb.",
+        "points": 2.0
+    },
+    {
+        "story": "0.10.0 release candidate",
+        "points": 3.0
+    },
+    {
+        "story": "Update thermos cli to read checkpoint stream from sandbox\n\nSee AURORA-1024.",
+        "points": 5.0
+    },
+    {
+        "story": "Upgrade to latest h2 version\n\nWe have been holding back on upgrading h2 since the latest release are labeled as beta.  As it turns out, the beta marker only applies to the new default MVCC storage implementation, and the developers consider the builds stable when MV_STORE is disabled \\[1\\].\n\n\\[1\\] https://groups.google.com/forum/#!topic/h2-database/3CDRKex_EgA",
+        "points": 1.0
+    },
+    {
+        "story": "Unique constraint on task_config_metadata.key should be removed\n\nTask config metadata is pairs, not a mapping.  This constraint prevents valid configurations.",
+        "points": 2.0
+    },
+    {
+        "story": "Preemptor perf improvements\n\nThere are two minor algorithm changes that should result in overall preemptor perf improvements:\n\n1. There seems to be a redundant scheduling attempt here: \\[1\\]. The preemptor loop is triggered within the same storage write lock right after a failed {{OfferManager.launchFirst()}} run that has already attempted to match all available offers. There is no reason to attempt another match given the same system conditions, especially considering that a positive scheduling result from this loop is discarded anyway \\[2\\].\n\n2. Instead of running an expensive scheduling loop \\[3\\] for every task victim, it's possible to \"size up\" victim resources and call scheduling filter only when rough resource estimates are sufficient. Something like:\n{noformat}\nif (totalResource.greaterOrEqualThan(ResourceSlot.from(pendingTask))) {\n  // call schedulingFilter\n}\n{noformat}\n\n\n\\[1\\] - https://github.com/apache/incubator-aurora/blob/master/src/main/java/org/apache/aurora/scheduler/async/preemptor/PreemptorImpl.java#L220-L237\n\\[2\\] - https://github.com/apache/incubator-aurora/blob/master/src/main/java/org/apache/aurora/scheduler/async/preemptor/PreemptorImpl.java#L338\n\\[3\\] - https://github.com/apache/incubator-aurora/blob/master/src/main/java/org/apache/aurora/scheduler/async/preemptor/PreemptorImpl.java#L263-L265",
+        "points": 2.0
+    },
+    {
+        "story": "Update page UI should have some indication of ongoing activity\n\nSome thoughts:\n\n- The in-progress instance boxes could pulse their background color.\n- Add a spinner to the bottom of the instance events to indicate that we're continuing to monitor for new events.",
+        "points": 3.0
+    },
+    {
+        "story": "Tests inheriting from AuroraClientCommandTest always pass\n\nThe test case below should fail, but it always passes.\n\n{noformat}\n$ git diff\ndiff --git a/src/test/python/apache/aurora/client/cli/test_supdate.py b/src/test/python/apache/aurora/client/cli/test_supdate.py\nindex ccbcae6..e76681f 100644\n--- a/src/test/python/apache/aurora/client/cli/test_supdate.py\n+++ b/src/test/python/apache/aurora/client/cli/test_supdate.py\n@@ -111,6 +111,9 @@ class TestStartUpdate(AuroraClientCommandTest):\n     ]\n     self.assert_lock_message(self._fake_context)\n \n+  def test_always_passes(self):\n+    assert 1 == 0\n+\n   def test_update_cron_job_fails(self):\n     mock_config = self.create_mock_config(is_cron=True)\n     self._fake_context.get_job_config = Mock(return_value=mock_config)\n{noformat}\n\n{noformat}\n$ ./pants test.pytest --no-fast --options='-v' src/test/python/apache/aurora/client/cli:supdate | tail -n1\n               SUCCESS\n{noformat}",
+        "points": 1.0
+    },
+    {
+        "story": "UpdateConfigError results in stack trace\n\n{noformat}\n$ aurora update start devcluster/vagrant/test/http_example /vagrant/src/test/sh/org/apache/aurora/e2e/http/http_example.aurora\nFatal error running command: Pulse interval seconds must be at least 60 seconds.\nTraceback (most recent call last):\n  File \"/usr/local/bin/aurora/apache/aurora/client/cli/__init__.py\", line 307, in _execute\n    result = noun.execute(context)\n  File \"/usr/local/bin/aurora/apache/aurora/client/cli/__init__.py\", line 383, in execute\n    return self.verbs[context.options.verb].execute(context)\n  File \"/usr/local/bin/aurora/apache/aurora/client/cli/update.py\", line 158, in execute\n    resp = api.start_job_update(config, context.options.message, instances)\n  File \"/usr/local/bin/aurora/apache/aurora/client/hooks/hooked_api.py\", line 190, in start_job_update\n    config, message, instances=instances))\n  File \"/usr/local/bin/aurora/apache/aurora/client/hooks/hooked_api.py\", line 145, in _hooked_call\n    resp = api_call()\n  File \"/usr/local/bin/aurora/apache/aurora/client/api/__init__.py\", line 165, in start_job_update\n    raise self.UpdateConfigError(str(e))\nUpdateConfigError: Pulse interval seconds must be at least 60 seconds.\n{noformat}",
+        "points": 2.0
+    },
+    {
+        "story": "Rename beta-update to update\n\nGraduate the server-side job update orchestration out of beta by removing 'beta-' from the subcommand name.",
+        "points": 2.0
+    },
+    {
+        "story": "IllegalArgumentException in end-to-end tests\n\nWhen running end-to-end tests on {{38c2e76}}, i encountered the following error:\n\n{noformat}\nE0723 00:20:18.231 THREAD137 org.apache.aurora.scheduler.updater.JobUpdateEventSubscriber.taskChangedState: Failed to handle state change: com.google.common.util.concurrent.UncheckedExecutionException: java.lang.IllegalArgumentException: Multiple entries wit\nh same key: TaskConfig(job:JobKey(role:vagrant, environment:test, name:http_example_docker), owner:Identity(role:vagrant, user:vagrant), environment:test, jobName:http_example_docker, isService:true, numCpus:0.5, ramMb:34, diskMb:64, priority:0, maxTaskFailu\nres:1, production:false, constraints:[Constraint(name:host, constraint:<TaskConstraint limit:LimitConstraint(limit:4)>)], requestedPorts:[http], taskLinks:{http=http://%host%:%port:http%}, contactEmail:vagrant@localhost, executorConfig:ExecutorConfig(name:Au\nroraExecutor, data:{\"environment\": \"test\", \"health_check_config\": {\"initial_interval_secs\": 5.0, \"endpoint\": \"/health\", \"expected_response_code\": 0, \"expected_response\": \"ok\", \"max_consecutive_failures\": 0, \"timeout_secs\": 1.0, \"interval_secs\": 1.0}, \"contai\nner\": {\"docker\": {\"image\": \"http_example\", \"parameters\": []}}, \"name\": \"http_example_docker\", \"service\": true, \"max_task_failures\": 1, \"cron_collision_policy\": \"KILL_EXISTING\", \"enable_hooks\": false, \"cluster\": \"devcluster\", \"task\": {\"processes\": [{\"daemon\":\n false, \"name\": \"stage_server\", \"ephemeral\": false, \"max_failures\": 1, \"min_duration\": 5, \"cmdline\": \"cp /tmp/http_example.py .\", \"final\": false}, {\"daemon\": false, \"name\": \"run_server\", \"ephemeral\": false, \"max_failures\": 1, \"min_duration\": 5, \"cmdline\": \"p\nython http_example.py {{thermos.ports[http]}}\", \"final\": false}], \"name\": \"http_example\", \"finalization_wait\": 30, \"max_failures\": 1, \"max_concurrency\": 0, \"resources\": {\"disk\": 67108864, \"ram\": 35651584, \"cpu\": 0.5}, \"constraints\": [{\"order\": [\"stage_server\n\", \"run_server\"]}]}, \"role\": \"vagrant\", \"contact\": \"vagrant@localhost\", \"announce\": {\"primary_port\": \"http\", \"portmap\": {\"aurora\": \"http\"}}, \"priority\": 0, \"lifecycle\": {\"http\": {\"graceful_shutdown_endpoint\": \"/quitquitquit\", \"port\": \"health\", \"shutdown_endp\noint\": \"/abortabortabort\"}}, \"production\": false, \"constraints\": {\"host\": \"limit:4\"}}), metadata:[], container:<Container docker:DockerContainer(image:http_example)>)=org.apache.aurora.scheduler.storage.db.views.DbTaskConfig@12f27c5c and TaskConfig(job:JobKe\ny(role:vagrant, environment:test, name:http_example_docker), owner:Identity(role:vagrant, user:vagrant), environment:test, jobName:http_example_docker, isService:true, numCpus:0.5, ramMb:34, diskMb:64, priority:0, maxTaskFailures:1, production:false, constra\nints:[Constraint(name:host, constraint:<TaskConstraint limit:LimitConstraint(limit:4)>)], requestedPorts:[http], taskLinks:{http=http://%host%:%port:http%}, contactEmail:vagrant@localhost, executorConfig:ExecutorConfig(name:AuroraExecutor, data:{\"environment\": \"test\", \"health_check_config\": {\"initial_interval_secs\": 5.0, \"endpoint\": \"/health\", \"expected_response_code\": 0, \"expected_response\": \"ok\", \"max_consecutive_failures\": 0, \"timeout_secs\": 1.0, \"interval_secs\": 1.0}, \"container\": {\"docker\": {\"image\": \"http_example\", \"parameters\": []}}, \"name\": \"http_example_docker\", \"service\": true, \"max_task_failures\": 1, \"cron_collision_policy\": \"KILL_EXISTING\", \"enable_hooks\": false, \"cluster\": \"devcluster\", \"task\": {\"processes\": [{\"daemon\": false, \"name\": \"stage_server\", \"ephemeral\": false, \"max_failures\": 1, \"min_duration\": 5, \"cmdline\": \"cp /tmp/http_example.py .\", \"final\": false}, {\"daemon\": false, \"name\": \"run_server\", \"ephemeral\": false, \"max_failures\": 1, \"min_duration\": 5, \"cmdline\": \"python http_example.py {{thermos.ports[http]}}\", \"final\": false}], \"name\": \"http_example\", \"finalization_wait\": 30, \"max_failures\": 1, \"max_concurrency\": 0, \"resources\": {\"disk\": 67108864, \"ram\": 35651584, \"cpu\": 0.5}, \"constraints\": [{\"order\": [\"stage_server\", \"run_server\"]}]}, \"role\": \"vagrant\", \"contact\": \"vagrant@localhost\", \"announce\": {\"primary_port\": \"http\", \"portmap\": {\"aurora\": \"http\"}}, \"priority\": 0, \"lifecycle\": {\"http\": {\"graceful_shutdown_endpoint\": \"/quitquitquit\", \"port\": \"health\", \"shutdown_endpoint\": \"/abortabortabort\"}}, \"production\": false, \"constraints\": {\"host\": \"limit:4\"}}), metadata:[], container:<Container docker:DockerContainer(image:http_example)>)=org.apache.aurora.scheduler.storage.db.views.DbTaskConfig@75f259b\ncom.google.common.util.concurrent.UncheckedExecutionException: java.lang.IllegalArgumentException: Multiple entries with same key: TaskConfig(job:JobKey(role:vagrant, environment:test, name:http_example_docker), owner:Identity(role:vagrant, user:vagrant), environment:test, jobName:http_example_docker, isService:true, numCpus:0.5, ramMb:34, diskMb:64, priority:0, maxTaskFailures:1, production:false, constraints:[Constraint(name:host, constraint:<TaskConstraint limit:LimitConstraint(limit:4)>)], requestedPorts:[http], taskLinks:{http=http://%host%:%port:http%}, contactEmail:vagrant@localhost, executorConfig:ExecutorConfig(name:AuroraExecutor, data:{\"environment\": \"test\", \"health_check_config\": {\"initial_interval_secs\": 5.0, \"endpoint\": \"/health\", \"expected_response_code\": 0, \"expected_response\": \"ok\", \"max_consecutive_failures\": 0, \"timeout_secs\": 1.0, \"interval_secs\": 1.0}, \"container\": {\"docker\": {\"image\": \"http_example\", \"parameters\": []}}, \"name\": \"http_example_docker\", \"service\": true, \"max_task_failures\": 1, \"cron_collision_policy\": \"KILL_EXISTING\", \"enable_hooks\": false, \"cluster\": \"devcluster\", \"task\": {\"processes\": [{\"daemon\": false, \"name\": \"stage_server\", \"ephemeral\": false, \"max_failures\": 1, \"min_duration\": 5, \"cmdline\": \"cp /tmp/http_example.py .\", \"final\": false}, {\"daemon\": false, \"name\": \"run_server\", \"ephemeral\": false, \"max_failures\": 1, \"min_duration\": 5, \"cmdline\": \"python http_example.py {{thermos.ports[http]}}\", \"final\": false}], \"name\": \"http_example\", \"finalization_wait\": 30, \"max_failures\": 1, \"max_concurrency\": 0, \"resources\": {\"disk\": 67108864, \"ram\": 35651584, \"cpu\": 0.5}, \"constraints\": [{\"order\": [\"stage_server\", \"run_server\"]}]}, \"role\": \"vagrant\", \"contact\": \"vagrant@localhost\", \"announce\": {\"primary_port\": \"http\", \"portmap\": {\"aurora\": \"http\"}}, \"priority\": 0, \"lifecycle\": {\"http\": {\"graceful_shutdown_endpoint\": \"/quitquitquit\", \"port\": \"health\", \"shutdown_endpoint\": \"/abortabortabort\"}}, \"production\": false, \"constraints\": {\"host\": \"limit:4\"}}), metadata:[], container:<Container docker:DockerContainer(image:http_example)>)=org.apache.aurora.scheduler.storage.db.views.DbTaskConfig@12f27c5c and TaskConfig(job:JobKey(role:vagrant, environment:test, name:http_example_docker), owner:Identity(role:vagrant, user:vagrant), environment:test, jobName:http_example_docker, isService:true, numCpus:0.5, ramMb:34, diskMb:64, priority:0, maxTaskFailures:1, production:false, constraints:[Constraint(name:host, constraint:<TaskConstraint limit:LimitConstraint(limit:4)>)], requestedPorts:[http], taskLinks:{http=http://%host%:%port:http%}, contactEmail:vagrant@localhost, executorConfig:ExecutorConfig(name:AuroraExecutor, data:{\"environment\": \"test\", \"health_check_config\": {\"initial_interval_secs\": 5.0, \"endpoint\": \"/health\", \"expected_response_code\": 0, \"expected_response\": \"ok\", \"max_consecutive_failures\": 0, \"timeout_secs\": 1.0, \"interval_secs\": 1.0}, \"container\": {\"docker\": {\"image\": \"http_example\", \"parameters\": []}}, \"name\": \"http_example_docker\", \"service\": true, \"max_task_failures\": 1, \"cron_collision_policy\": \"KILL_EXISTING\", \"enable_hooks\": false, \"cluster\": \"devcluster\", \"task\": {\"processes\": [{\"daemon\": false, \"name\": \"stage_server\", \"ephemeral\": false, \"max_failures\": 1, \"min_duration\": 5, \"cmdline\": \"cp /tmp/http_example.py .\", \"final\": false}, {\"daemon\": false, \"name\": \"run_server\", \"ephemeral\": false, \"max_failures\": 1, \"min_duration\": 5, \"cmdline\": \"python http_example.py {{thermos.ports[http]}}\", \"final\": false}], \"name\": \"http_example\", \"finalization_wait\": 30, \"max_failures\": 1, \"max_concurrency\": 0, \"resources\": {\"disk\": 67108864, \"ram\": 35651584, \"cpu\": 0.5}, \"constraints\": [{\"order\": [\"stage_server\", \"run_server\"]}]}, \"role\": \"vagrant\", \"contact\": \"vagrant@localhost\", \"announce\": {\"primary_port\": \"http\", \"portmap\": {\"aurora\": \"http\"}}, \"priority\": 0, \"lifecycle\": {\"http\": {\"graceful_shutdown_endpoint\": \"/quitquitquit\", \"port\": \"health\", \"shutdown_endpoint\": \"/abortabortabort\"}}, \"production\": false, \"constraints\": {\"host\": \"limit:4\"}}), metadata:[], container:<Container docker:DockerContainer(image:http_example)>)=org.apache.aurora.scheduler.storage.db.views.DbTaskConfig@75f259b\n        at com.google.common.cache.LocalCache$Segment.get(LocalCache.java:2201)\n        at com.google.common.cache.LocalCache.get(LocalCache.java:3934)\n        at com.google.common.cache.LocalCache.getOrLoad(LocalCache.java:3938)\n        at com.google.common.cache.LocalCache$LocalLoadingCache.get(LocalCache.java:4821)\n        at com.google.common.cache.LocalCache$LocalLoadingCache.getUnchecked(LocalCache.java:4827)\n        at org.apache.aurora.scheduler.storage.db.DbTaskStore.saveTasks(DbTaskStore.java:132)\n        at com.twitter.common.inject.TimedInterceptor.invoke(TimedInterceptor.java:87)\n        at org.apache.aurora.scheduler.storage.db.DbTaskStore.mutateTasks(DbTaskStore.java:176)\n        at com.twitter.common.inject.TimedInterceptor.invoke(TimedInterceptor.java:87)\n        at org.apache.aurora.scheduler.storage.log.WriteAheadStorage.mutateTasks(WriteAheadStorage.java:195)\n        at org.apache.aurora.scheduler.state.StateManagerImpl.updateTaskAndExternalState(StateManagerImpl.java:326)\n        at org.apache.aurora.scheduler.state.StateManagerImpl.insertPendingTasks(StateManagerImpl.java:144)\n        at org.apache.aurora.scheduler.updater.InstanceActionHandler$AddTask.getReevaluationDelay(InstanceActionHandler.java:85)\n        at org.apache.aurora.scheduler.updater.JobUpdateControllerImpl.evaluateUpdater(JobUpdateControllerImpl.java:668)\n        at org.apache.aurora.scheduler.updater.JobUpdateControllerImpl.access$1400(JobUpdateControllerImpl.java:108)\n        at org.apache.aurora.scheduler.updater.JobUpdateControllerImpl$6.execute(JobUpdateControllerImpl.java:356)\n        at org.apache.aurora.scheduler.storage.Storage$MutateWork$NoResult.apply(Storage.java:131)\n        at org.apache.aurora.scheduler.storage.Storage$MutateWork$NoResult$Quiet.apply(Storage.java:148)\n        at org.apache.aurora.scheduler.storage.log.LogStorage$24.apply(LogStorage.java:605)\n        at org.apache.aurora.scheduler.storage.log.LogStorage$24.apply(LogStorage.java:602)\n        at org.apache.aurora.scheduler.storage.db.DbStorage.write(DbStorage.java:143)\n        at org.mybatis.guice.transactional.TransactionalMethodInterceptor.invoke(TransactionalMethodInterceptor.java:101)\n        at com.twitter.common.inject.TimedInterceptor.invoke(TimedInterceptor.java:87)\n        at org.apache.aurora.scheduler.storage.log.LogStorage.doInTransaction(LogStorage.java:602)\n        at org.apache.aurora.scheduler.storage.log.LogStorage.write(LogStorage.java:635)\n        at org.apache.aurora.scheduler.storage.CallOrderEnforcingStorage.write(CallOrderEnforcingStorage.java:130)\n        at org.apache.aurora.scheduler.updater.JobUpdateControllerImpl.instanceChanged(JobUpdateControllerImpl.java:347)\n        at org.apache.aurora.scheduler.updater.JobUpdateControllerImpl.instanceChangedState(JobUpdateControllerImpl.java:332)\n        at org.apache.aurora.scheduler.updater.JobUpdateEventSubscriber.taskChangedState(JobUpdateEventSubscriber.java:56)\n        at sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method)\n        at sun.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)\n        at sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)\n        at java.lang.reflect.Method.invoke(Method.java:497)\n        at com.google.common.eventbus.EventSubscriber.handleEvent(EventSubscriber.java:74)\n        at com.google.common.eventbus.SynchronizedEventSubscriber.handleEvent(SynchronizedEventSubscriber.java:47)\n        at com.google.common.eventbus.EventBus.dispatch(EventBus.java:322)\n        at com.google.common.eventbus.AsyncEventBus.access$001(AsyncEventBus.java:34)\n        at com.google.common.eventbus.AsyncEventBus$1.run(AsyncEventBus.java:117)\n        at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1142)\n        at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:617)\n        at java.lang.Thread.run(Thread.java:745)\n{noformat}",
+        "points": 3.0
+    },
+    {
+        "story": "aurora update should fail gracefully if job is not a service\n\n14:31 < bhuvan> a quick note on aurora. when we update a job and if the job is finished before update command, the update command fail. is it a known issue?\n14:32 < wickman> i think updates require that the job is a Service(), which means there is no such thing as \"finished\"\n14:32 < wickman> since on completion they will just be restarted\n14:34 -!- dlester [~dlester@apache/committer/dlester] has joined #aurora\n14:34 < bhuvan> does it mean we can't update a job that is running with service=False?\n14:35 < wickman> i believe so (somebody else correct me if i'm wrong)\n14:35 < wickman> i think the reason it's that way is because kill/create has the same semantics for something with service=False\n14:40 < mkhutornenko> bhuvan: thanks for brining this up. I think the updater should do a pre-check and bail out gracefully if the job is not a service\n14:40 < bhuvan> mkhutornenko: ok. i'll file a bug.\n14:40 < mkhutornenko> bhuvan: thanks, I was just typing to suggest it :)",
+        "points": 2.0
+    },
+    {
+        "story": "Make \"aurora task\" commands support optional ssh options\n\nThe \"aurora task\" commands should pass \"-v\" flag down to subprocess to make sure \"ssh -v\" is invoked. Otherwise, it's impossible to debug command failures due to misbehaving ssh.",
+        "points": 2.0
+    },
+    {
+        "story": "Upgrade to guice 4.0\n\nGuice 4.0 has been released. Among the new features, probably the most significant is Java 8 support - in Guice 3.0 stack traces are obfuscated by https://github.com/google/guice/issues/757. As our code expands use of lambdas and method references this will become even more critical.",
+        "points": 3.0
+    },
+    {
+        "story": "aurora cron start --open-browser fails with stacktrace\n\nRunning {{aurora cron start <jobkey> --open-browser}} always fails with the following stack trace:\n{noformat}\n INFO]\nFatal error running command:\nTraceback (most recent call last):\n  File \"/Users/zmanji/.tools-cache/home/aurora/tools/client/libexec/aurora-client/apache/aurora/client/cli/__init__.py\", line 312, in _execute\n    result = noun.execute(context)\n  File \"/Users/zmanji/.tools-cache/home/aurora/tools/client/libexec/aurora-client/apache/aurora/client/cli/__init__.py\", line 390, in execute\n    return self.verbs[context.options.verb].execute(context)\n  File \"/Users/zmanji/.tools-cache/home/aurora/tools/client/libexec/aurora-client/apache/aurora/client/cli/cron.py\", line 114, in execute\n    context.open_job_page(api, context.options.job_spec)\nAttributeError: 'Namespace' object has no attribute 'job_spec'\n{noformat}",
+        "points": 1.0
+    },
+    {
+        "story": "Remove the \"enable_legacy_constraints\" flag.\n\nAs a part of AURORA-184 we added a flag called \"enable_legacy_constraints\" which enables behaviour that injects a host and rack limit into every job.\n\nWe should deprecate and remove this flag in some future release.",
+        "points": 2.0
+    },
+    {
+        "story": "Update RPCs and client/UI to properly identify non-dedicated consumption",
+        "points": 2.0
+    },
+    {
+        "story": "`src/test/python/apache/aurora/api_util.py` is not apart of any pants targets\n\nThere is no pants target which lists `src/test/python/apache/aurora/api_util.py` as a source file. `src/test/python/apache/aurora/BUILD` just contains:\n{noformat}\npython_test_suite(\n  name = 'all',\n  dependencies = [\n    'src/test/python/apache/aurora/admin:all',\n    'src/test/python/apache/aurora/client:all',\n    'src/test/python/apache/aurora/common:all',\n    'src/test/python/apache/aurora/config:all',\n    'src/test/python/apache/aurora/executor:all',\n  ]\n)\n{noformat}\n\nImproper source dependency specification can cause us some trouble if we are not careful, it is probably best to move this file closer to where it is used.",
+        "points": 1.0
+    },
+    {
+        "story": "Scheduler updater should limit the number of job/instance events\n\nLarge/flapping scheduler job updates may generate too many events in the update store. The update settings are fully controlled by the user and there is a potential for a misconfigured job update to completely overwhelm our in-memory DB storage with job update instance events. \n\nFor example, a large flapping update with {{max_per_shard_failures}} and {{max_total_failures}} set to max INT when left unattended can quickly consume all available RAM and kill the scheduler. A manual cleanup of the scheduler log would be needed to bring the scheduler up.\n\nThis can be especially relevant with the introduction of update heartbeats  (AURORA-690) that can further exacerbate the problem (e.g. when {{blockIfNoPulseAfterMs}} set too low wrt the external service pulse rate).\n\nWe need to cap the max per-job lifetime count of {{JobUpdateEvent}} and {{JobInstanceUpdateEvent}} instances. A nice bonus would be providing a hint in the UI when the event sequence is cut off.",
+        "points": 5.0
+    },
+    {
+        "story": "Improve discoverability of dashboard link on the Job page\n\nWe optionally link to a job dashboard from the Job page (if {{viz_job_url_prefix}} is passed to the Scheduler on the command line). The icon for this is currently uses glyphicons halflings font stats glyph (depending on how you view it, a series of 3 vertical bars, or a series of hills). It's not at all obvious that this link takes you anywhere interesting. We should revisit the discoverability of this link.",
+        "points": 1.0
+    },
+    {
+        "story": "MesosSchedulerImpl should check if reason is present when posting status updates\n\nWe export stats based on task statuses, however since protobuf enums default to a value when unset, the reason stats we generate may not be correct. c.f https://github.com/apache/aurora/blob/998993dd802cf5e94a995aefd7a6c4ec90a1d3af/src/main/java/org/apache/aurora/scheduler/mesos/MesosSchedulerImpl.java#L228. If reason is unset, it will default to the first enum value ({{REASON_COMMAND_EXECUTOR_FAILED}}).\n\nWe should call {{status.hasReason()}} first and if it's not set, do not use the value of {{status.getReason()}}.",
+        "points": 2.0
+    },
+    {
+        "story": "Add metrics for scheduler update states\n\nIt would be nice to expose metrics to track the terminal states of updates. E.g. update_status_FAILED, update_status_ROLLED_BACK, update_status_ROLLED_FORWARD, etc.",
+        "points": 2.0
+    },
+    {
+        "story": "Client retries 4xx errors\n\nLooks like the client currently retries all client errors, including 4xx ones. For example, using a client against a scheduler that requires Kerberos there's a series of lines like:\n\n{noformat}\n WARN] Connection error with scheduler: Unknown error talking to http://192.168.33.7:8081/api: 401 Client Error: Unauthorized, reconnecting...\n WARN] Connection error with scheduler: Unknown error talking to http://192.168.33.7:8081/api: 401 Client Error: Unauthorized, reconnecting...\n WARN] Connection error with scheduler: Unknown error talking to http://192.168.33.7:8081/api: 401 Client Error: Unauthorized, reconnecting...\n...\n{noformat}",
+        "points": 3.0
+    },
+    {
+        "story": "Slave reservation is too restrictive\n\nThis is a regression introduced in https://reviews.apache.org/r/37001/. The updated TaskAssigner logic looks for an exclusive task->slave match any time a slave reservation is present. Any time scheduling fails and a slave reservation is created by the preemptor a task group gets effectively locked into the reserved slave. Given that reverse slave->task relationship is no longer enforced, a reserved slave could be taken by some other task thus slowing down scheduling progress.",
+        "points": 3.0
+    },
+    {
+        "story": "IP clearance and import of twitter commons java code\n\nWe currently have 32  dependencies on libraries from Twitter commons.  \n\n{noformat}\n$ grep com.twitter.common build.gradle  | wc -l\n      32\n{noformat}\n\nWhile these libraries have generally served us well, this number of dependencies creates a transitive web that inhibits us from upgrading our direct dependencies.\n\nConsider removing these dependencies and replacing our uses of them with forks of the code in our repository.  My hunch is that we use relatively insignificant portions of them overall.  However, if we end up just cloning the sources and maintaining them ourselves, we should back out.",
+        "points": 8.0
+    },
+    {
+        "story": "Use Apache Shiro for HTTP authentication\n\n* Wire in ShiroWebModule behind optional flag, add ability to use shiro.ini + HTTP Basic Authentication\n* Create a ShiroAuthModule as an alternative to UnsecureAuthModule\n* Add a ShiroCapabilityValidator that delegates to Shiro (keeping compatibility with the existing CapabilityValidator API)\n* Expose flag for custom Realm implementation.",
+        "points": 5.0
+    },
+    {
+        "story": "Don't store serialized thrift objects in the database\n\nTo expedite AURORA-610 we accepted some technical debt by storing serialized thrift objects in the database.  Once the database is completely fronted by SQL, we need to go back and manage these objects with references to other tables.",
+        "points": 3.0
+    }
+]

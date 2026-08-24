@@ -163,6 +163,13 @@ def setup_parser() -> argparse.ArgumentParser:
         default="data/raw_dataset.json", 
         help="Path to save the extracted JSON dataset"
     )
+    extract_parser.add_argument(
+        "--split", 
+        type=int, 
+        nargs=3, 
+        metavar=("TRAIN", "VAL", "TEST"),
+        help="Space-separated percentages for Train/Val/Test splits (e.g., --split 80 10 10). If provided, it overrides --out."
+    )
     
     # Platform specific arguments
     extract_parser.add_argument("--domain", type=str, help="Jira domain (e.g., yourcompany.atlassian.net)")
