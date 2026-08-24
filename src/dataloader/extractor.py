@@ -56,7 +56,7 @@ class DataExtractor:
 
         # 2. Query the issues
         jql = f"project = {project_key} AND 'Story Points' is not EMPTY"
-        url = f"{base_url}/rest/api/2/search?jql={jql}&maxResults=100"
+        url = f"{base_url}/rest/api/2/search?jql={jql}&maxResults=5000"
         
         headers = {"Accept": "application/json"}
         dataset = []

@@ -103,7 +103,7 @@ class StoryPointTrainer:
                 unit="batch"
             )
 
-            for batch in self.train_loader:
+            for batch in progress_bar:
                 input_ids = batch["input_ids"].to(self.device)
                 mask = batch["attention_mask"].to(self.device)
                 labels = batch["ordinal_labels"].to(self.device)
@@ -121,7 +121,6 @@ class StoryPointTrainer:
                 batch_loss = loss.item()
                 train_loss += loss.item() * input_ids.size(0)
                 
-                # Update live stats on the progress bar
                 current_lr = self.optimizer.param_groups[0]["lr"]
                 progress_bar.set_postfix({
                     "batch_loss": f"{batch_loss:.4f}",
@@ -132,7 +131,7 @@ class StoryPointTrainer:
             val_loss, val_mae = self._eval()
             
             # Print epoch summary below progress bar
-            print(f"    └─ [Summary] Train Loss: {train_loss:.4f} | Val Loss: {val_loss:.4f} | Val MAE: {val_mae:.4f}")
+            tqdm.write(f"    └─ [Summary] Train Loss: {train_loss:.4f} | Val Loss: {val_loss:.4f} | Val MAE: {val_mae:.4f}")
 
             if val_loss < best_val_loss:
                 best_val_loss = val_loss
