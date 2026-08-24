@@ -7,6 +7,7 @@ import json
 import os
 import sys
 from typing import List, Tuple
+from src.dataloader.build_dataset import run_mining_pipeline
 
 # Import pipeline runners
 from src.models.ranking_pipeline.pipeline import run_ranking_pipeline
@@ -124,7 +125,7 @@ def setup_parser() -> argparse.ArgumentParser:
     predict_parser.add_argument(
         "--weights",
         type=str,
-        default="weights/story_point_model.pt",
+        default="binaries/story_point_model.pt",
         help="Path to pre-trained model weights (.pt file)"
     ) 
     
@@ -170,11 +171,35 @@ def setup_parser() -> argparse.ArgumentParser:
         metavar=("TRAIN", "VAL", "TEST"),
         help="Space-separated percentages for Train/Val/Test splits (e.g., --split 80 10 10). If provided, it overrides --out."
     )
-    
     # Platform specific arguments
     extract_parser.add_argument("--domain", type=str, help="Jira domain (e.g., yourcompany.atlassian.net)")
     extract_parser.add_argument("--email", type=str, help="Jira account email (or set JIRA_EMAIL env var)")
     extract_parser.add_argument("--token", type=str, help="API token (or set GITHUB_TOKEN / JIRA_API_TOKEN env vars)")
+
+    # ==========================================
+    # 5. REPOSITORY MINING SUBCOMMAND
+    # ==========================================
+    mine_parser = subparsers.add_parser(
+        "mine", 
+        help="Mine a local git repository to append LOC to an existing dataset"
+    )
+    mine_parser.add_argument(
+        "--data", 
+        required=True, 
+        help="Path to the extracted JSON dataset (e.g., data/processed/MESOS/mesos_dataset_train.json)"
+    )
+    mine_parser.add_argument(
+        "--repo", 
+        required=True, 
+        help="Path to the local cloned git repository (e.g., ../mesos)"
+    )
+    mine_parser.add_argument(
+        "--out", 
+        help="Optional: Path to save the updated dataset (defaults to overwriting --data)"
+    )
+
+
+
 
     return parser
 
@@ -257,6 +282,9 @@ def main():
         print(f"STARTING DATA EXTRACTION PIPELINE | Source: {args.source.upper()}")
         print("================================================================================")
         run_extraction_pipeline(args)
+
+    elif args.command == "mine":
+        run_mining_pipeline(args)
 
     else:
         parser.print_help()

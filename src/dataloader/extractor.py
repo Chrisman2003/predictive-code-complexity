@@ -93,7 +93,7 @@ class DataExtractor:
                         break
 
             if points is not None and story:
-                dataset.append({"story": story, "points": points})
+                dataset.append({"key": issue.get("key"), "story": story, "points": points})
 
         print(f"[+] Successfully extracted {len(dataset)} stories.")
         return dataset
@@ -136,7 +136,7 @@ class DataExtractor:
                     continue
 
             if points is not None and story:
-                dataset.append({"story": story, "points": points})
+                dataset.append({"key": issue.get("key"),"story": story, "points": points})
 
         print(f"[+] Successfully extracted {len(dataset)} stories.")
         return dataset

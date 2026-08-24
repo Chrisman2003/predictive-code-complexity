@@ -1,6 +1,8 @@
 import json
+import os
 from pathlib import Path
 from typing import List, Dict, Any
+from src.dataloader.static_analysers import LocMiner
 from src.dataloader.config import RAW_DATA_DIR, PROCESSED_DATA_DIR
 from src.dataloader.static_analysers import CodeAnalyzer
 from src.dataloader.fetch_repos import sync_all_benchmarks
@@ -72,5 +74,49 @@ def build_dataset() -> Path:
     print(f"[✓] Saved to: {output_path}")
     return output_path
 
-if __name__ == "__main__":
-    build_dataset()
+def run_mining_pipeline(args):
+    """Reads a JSON dataset, mines LOC from a local repo, and updates the JSON."""
+    if not os.path.exists(args.data):
+        print(f"[!] Error: Dataset not found at {args.data}")
+        return
+        
+    is_url = args.repo.startswith("http://") or args.repo.startswith("https://")
+    if not is_url and not os.path.exists(args.repo):
+        print(f"[!] Error: Local repository not found at {args.repo}")
+        return
+
+    # 1. Load your existing dataset
+    with open(args.data, "r", encoding="utf-8") as f:
+        dataset = json.load(f)
+
+    # Assuming your Jira extractor saves the issue ID under 'key' (e.g., "MESOS-1234")
+    # Adjust 'key' if your JSON uses 'id' or 'issue_key' instead.
+    target_ids = [issue.get("key") for issue in dataset if issue.get("key")]
+    
+    if not target_ids:
+        print("[!] Error: Could not find any Jira IDs (under the 'key' field) in the dataset.")
+        return
+
+    # 2. Run the Miner
+    miner = LocMiner(repo_path=args.repo)
+    loc_map = miner.mine_loc_for_issues(target_ids)
+
+    # 3. Append the LOC data to the dataset
+    updated_count = 0
+    for issue in dataset:
+        issue_id = issue.get("key")
+        if issue_id in loc_map:
+            issue["loc"] = loc_map[issue_id]
+            if loc_map[issue_id] > 0:
+                updated_count += 1
+        else:
+            issue["loc"] = 0
+
+    print(f"[*] Found code changes for {updated_count} out of {len(dataset)} issues.")
+
+    # 4. Save the updated dataset
+    out_path = args.out if args.out else args.data
+    with open(out_path, "w", encoding="utf-8") as f:
+        json.dump(dataset, f, indent=4)
+        
+    print(f"[+] Successfully saved enriched dataset to {out_path}")
