@@ -46,7 +46,10 @@ class TransformerStoryPointModel(nn.Module):
         Strategy 'full': Freeze entire transformer backbone.
         Strategy 'partial': Freeze bottom layers (0 to unfreeze_layers_from - 1), keep top layers trainable.
         """
-        if strategy == "full":
+        if strategy == "unfreeze":
+            for param in self.backbone.parameters():
+                param.requires_grad = True
+        elif strategy == "full":
             for param in self.backbone.parameters():
                 param.requires_grad = False
         elif strategy == "partial":
@@ -66,21 +69,6 @@ class TransformerStoryPointModel(nn.Module):
                     for p in block.parameters():
                         p.requires_grad = True
 
-    def forward(self, input_ids: torch.Tensor, attention_mask: torch.Tensor) -> torch.Tensor:
-        # Tensor Shape: (batch_size, seq_length, hidden_dim)
-        outputs = self.backbone(input_ids=input_ids, attention_mask=attention_mask)
-        
-        # Pool hidden states: last token for GPT models, EOS/mean for others
-        if hasattr(outputs, "last_hidden_state"):
-            sequence_lengths = attention_mask.sum(dim=1) - 1
-            batch_size = input_ids.shape[0]
-            pooled_output = outputs.last_hidden_state[torch.arange(batch_size), sequence_lengths]
-        else:
-            pooled_output = outputs[0][:, 0, :]
-
-        logits = self.head(pooled_output)
-        return logits
-    
     def forward(self, input_ids: torch.Tensor, attention_mask: torch.Tensor) -> torch.Tensor:
         outputs = self.backbone(input_ids=input_ids, attention_mask=attention_mask)
         # Safely extract hidden states whether it returns an object or a tuple

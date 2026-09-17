@@ -1,4 +1,5 @@
 import math
+import os
 import torch
 from torch.utils.data import DataLoader
 from typing import Dict, Any, Tuple, Optional
@@ -33,7 +34,9 @@ class StoryPointTrainer:
         epochs: int = 50,
         warmup_steps: int = 100,
         patience: int = 12,
-        device: str = "cuda" if torch.cuda.is_available() else "cpu"
+        device: str = "cuda" if torch.cuda.is_available() else "cpu",
+        checkpoint_dir: str = "binaries/checkpoints",
+        freeze_epochs: int = 3
     ):
         self.model = model.to(device)
         self.train_loader = train_loader
@@ -44,6 +47,9 @@ class StoryPointTrainer:
         self.device = device
         self.criterion = CoralOrdinalLoss()
         self.early_stopping = EarlyStopping(patience=patience)
+        self.checkpoint_dir = checkpoint_dir
+        self.freeze_epochs = freeze_epochs
+        os.makedirs(self.checkpoint_dir, exist_ok=True)
         
         self.total_steps = len(train_loader) * epochs
         self.current_step = 0
@@ -88,11 +94,44 @@ class StoryPointTrainer:
 
         return total_loss / count, total_mae / count
 
-    def train(self) -> Dict[str, Any]:
+    def resume_from_checkpoint(self, checkpoint_path: str):
+        if not os.path.exists(checkpoint_path):
+            print(f"[!] Checkpoint not found at {checkpoint_path}")
+            return 0
+            
+        print(f"[*] Resuming training from {checkpoint_path}...")
+        checkpoint = torch.load(checkpoint_path, map_location=self.device)
+        
+        self.model.load_state_dict(checkpoint['model_state_dict'])
+        self.optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
+        self.current_step = checkpoint['current_step']
+        self.early_stopping.best_loss = checkpoint['best_val_loss']
+        
+        resumed_epoch = checkpoint['epoch'] + 1
+        print(f"[+] Successfully restored. Resuming at epoch {resumed_epoch}.")
+        return resumed_epoch
+
+    def train(self, resume_path: Optional[str] = None) -> Dict[str, Any]:
+        # Warmup Epochs: freeze fully model backbone and shrink learning rate
         best_val_loss = float("inf")
         best_val_mae = float("inf")
+        
+        # NEW: Handle resuming
+        start_epoch = 0
+        if resume_path:
+            start_epoch = self.resume_from_checkpoint(resume_path)
+            # Ensure early stopping best loss carries over
+            best_val_loss = self.early_stopping.best_loss
 
-        for epoch in range(self.epochs):
+        for epoch in range(start_epoch, self.epochs):
+            # NEW: Two-Phase Training Logic
+            if epoch < self.freeze_epochs:
+                if epoch == 0 or (resume_path and epoch == start_epoch):
+                    self.model.freeze_backbone(strategy="full")
+            elif epoch == self.freeze_epochs:
+                # Unfreeze at exactly this epoch
+                self.model.freeze_backbone(strategy="unfreeze")
+
             self.model.train()
             train_loss = 0.0
             
@@ -130,12 +169,29 @@ class StoryPointTrainer:
             train_loss /= len(self.train_loader.dataset)
             val_loss, val_mae = self._eval()
             
-            # Print epoch summary below progress bar
             tqdm.write(f"    └─ [Summary] Train Loss: {train_loss:.4f} | Val Loss: {val_loss:.4f} | Val MAE: {val_mae:.4f}")
+
+            # NEW: CHECKPOINT SAVING LOGIC
+            checkpoint = {
+                'epoch': epoch,
+                'model_state_dict': self.model.state_dict(),
+                'optimizer_state_dict': self.optimizer.state_dict(),
+                'current_step': self.current_step,
+                'val_loss': val_loss,
+                'best_val_loss': best_val_loss if val_loss >= best_val_loss else val_loss
+            }
+            
+            # Save the latest epoch for crash recovery
+            latest_path = os.path.join(self.checkpoint_dir, "checkpoint_latest.pt")
+            torch.save(checkpoint, latest_path)
 
             if val_loss < best_val_loss:
                 best_val_loss = val_loss
                 best_val_mae = val_mae
+                # Only save weights for the best model (for final inference)
+                best_path = os.path.join(self.checkpoint_dir, "best_model.pt")
+                torch.save(self.model.state_dict(), best_path)
+                tqdm.write(f"    └─ [*] New best model saved!")
 
             if self.early_stopping.check(val_loss):
                 print(f"Early stopping triggered at Epoch {epoch + 1}")

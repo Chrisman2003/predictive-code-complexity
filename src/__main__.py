@@ -197,10 +197,6 @@ def setup_parser() -> argparse.ArgumentParser:
         "--out", 
         help="Optional: Path to save the updated dataset (defaults to overwriting --data)"
     )
-
-
-
-
     return parser
 
 
@@ -261,7 +257,7 @@ def main():
             pipeline = StoryPointPredictionPipeline(model_name=args.model)
             if os.path.exists(weights_path):
                 pipeline.load_weights(weights_path)
-            else: 
+            else:
                 print(f"[!] Warning: No saved weights found at '{weights_path}'. Predicting with initialized base weights.")
 
             predicted_point = pipeline.predict([args.story])[0]

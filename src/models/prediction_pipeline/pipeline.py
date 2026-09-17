@@ -41,7 +41,8 @@ class StoryPointPredictionPipeline:
         freeze_strategy: str = "partial",
         unfreeze_layers_from: int = 7,
         epochs: int = 30,
-        patience: int = 12
+        patience: int = 12,
+        resume_path: str = None  # NEW: Bridge for Checkpoint Pattern
     ) -> Dict[str, Any]:
         """
         Direct training method allowing explicit manual hyperparameter tuning
@@ -59,7 +60,6 @@ class StoryPointPredictionPipeline:
             dropout_prob=dropout,
             hidden_dim=hidden_dim
         )
-        self.model.freeze_backbone(strategy=freeze_strategy, unfreeze_layers_from=unfreeze_layers_from)
 
         param_groups = self.model.build_llrd_param_groups(
             base_lr=lr,
@@ -75,7 +75,7 @@ class StoryPointPredictionPipeline:
             epochs=epochs,
             patience=patience
         )
-        return trainer.train()
+        return trainer.train(resume_path=resume_path)
 
 
     def tune_and_fit(
@@ -84,13 +84,14 @@ class StoryPointPredictionPipeline:
         train_points: List[float],
         val_stories: List[str], 
         val_points: List[float],
-        run_tuning: bool = False
+        run_tuning: bool = False,
+        resume_path: str = None  # NEW: Bridge for Checkpoint Pattern
     ) -> Dict[str, Any]:
         """
         Runs hyperparameter tuning (if run_tuning=True) then executes training.
         """
         if not run_tuning:
-            return self.fit(train_stories, train_points, val_stories, val_points)
+            return self.fit(train_stories, train_points, val_stories, val_points, resume_path=resume_path)
         
         train_ds = StoryPointDataset(train_stories, train_points, self.tokenizer, scale=self.scale)
         val_ds = StoryPointDataset(val_stories, val_points, self.tokenizer, scale=self.scale)
