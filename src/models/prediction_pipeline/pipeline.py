@@ -107,8 +107,7 @@ class StoryPointPredictionPipeline:
             weight_decay=best["weight_decay"],
             dropout=best["dropout"],
             hidden_dim=best["hidden_dim"],
-            batch_size=best["batch_size"],
-            freeze_strategy=best["freeze_strategy"]
+            batch_size=best["batch_size"]
         )
         
 
