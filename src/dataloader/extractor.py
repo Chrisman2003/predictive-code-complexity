@@ -8,8 +8,7 @@ from typing import List, Dict, Any
 class DataExtractor:
     def __init__(self, output_path: str):
         self.output_path = output_path
-        os.makedirs(os.path.dirname(self.output_path), exist_ok=True)
-
+        
     def _get_story_points_field_id(self, base_url: str, auth: tuple = None) -> str:
         """
         Dynamically queries Jira's schema to find the custom field ID for 'Story Points'.
@@ -60,43 +59,85 @@ class DataExtractor:
         # 1. Dynamically resolve the Story Points custom field ID
         sp_field_id = self._get_story_points_field_id(base_url, auth)
 
-        # 2. Query the issues
+
+
+
+
+
+
+
+        # 2. Query the issues using pagination
+        page_size = 1000
         jql = f"project = {project_key} AND 'Story Points' is not EMPTY"
-        url = f"{base_url}/rest/api/2/search?jql={jql}&maxResults=5000"
-        
+
         headers = {"Accept": "application/json"}
         dataset = []
+        start_at = 0
 
-        response = requests.get(url, headers=headers, auth=auth)
-        if response.status_code != 200:
-            print(f"[!] Jira API Error ({response.status_code}): {response.text}")
-            return dataset
+        while True:
+            params = {
+                "jql": jql,
+                "startAt": start_at,
+                "maxResults": page_size,
+            }
 
-        issues = response.json().get("issues", [])
-        for issue in issues:
-            fields = issue.get("fields", {})
-            title = fields.get("summary", "")
-            description = fields.get("description", "") or ""
-            
-            story = f"{title}\n\n{description}".strip()
-            
-            points = None
-            
-            # 3. Extract points using the dynamically mapped ID
-            if sp_field_id and fields.get(sp_field_id) is not None:
-                points = float(fields.get(sp_field_id))
-            else:
-                # Fallback: Guess the first numeric custom field if mapping failed
-                for key, value in fields.items():
-                    if "customfield" in key and isinstance(value, (int, float)):
-                        points = float(value)
-                        break
+            response = requests.get(
+                f"{base_url}/rest/api/2/search",
+                params=params,
+                headers=headers,
+                auth=auth
+            )
 
-            if points is not None and story:
-                dataset.append({"key": issue.get("key"), "story": story, "points": points})
+            if response.status_code != 200:
+                print(f"[!] Jira API Error ({response.status_code}): {response.text}")
+                return dataset
+
+            data = response.json()
+            issues = data.get("issues", [])
+            total = data.get("total")
+
+            print(f"[*] Retrieved {len(issues)} issues starting at {start_at}"
+                f"{f' / {total} total' if total is not None else ''}")
+
+            for issue in issues:
+                fields = issue.get("fields", {})
+                title = fields.get("summary", "")
+                description = fields.get("description", "") or ""
+
+                story = f"{title}\n\n{description}".strip()
+
+                points = None
+
+                # 3. Extract points using the dynamically mapped ID
+                if sp_field_id and fields.get(sp_field_id) is not None:
+                    points = float(fields.get(sp_field_id))
+                else:
+                    for key, value in fields.items():
+                        if "customfield" in key and isinstance(value, (int, float)):
+                            points = float(value)
+                            break
+
+                if points is not None and story:
+                    dataset.append({
+                        "key": issue.get("key"),
+                        "story": story,
+                        "points": points
+                    })
+
+            # Stop when Jira gives us an empty page
+            if not issues:
+                break
+
+            # Prefer total when available
+            if total is not None and start_at + len(issues) >= total:
+                break
+
+            # Advance by the number actually returned
+            start_at += len(issues)
 
         print(f"[+] Successfully extracted {len(dataset)} stories.")
         return dataset
+
 
     def extract_github(self, repo: str, token: str = None) -> List[Dict[str, Any]]:
         """
@@ -201,14 +242,15 @@ def run_extraction_pipeline(args):
             "test": dataset[val_end:]
         }
         
-        # Build the dynamic path: data/processed/Mesos/
-        target_dir = args.target.replace("/", "_")
-        base_dir = os.path.join("data", "processed", target_dir)
+        # Build the dynamic path: data/repositories/Mesos/
+        #target_dir = args.target.replace("/", "_")
+        base_dir = os.path.join("data", args.out)
         os.makedirs(base_dir, exist_ok=True)
-        
-        target_prefix = target_dir.lower()
 
+        target_prefix = args.target.lower()    
         for split_name, split_data in splits.items():
-            # Generate the dynamic path for this specific split
-            filepath = os.path.join(base_dir, f"{target_prefix}_dataset_{split_name}.json")
+            filepath = os.path.join(
+                base_dir,
+                f"{target_prefix}_dataset_{split_name}.json"
+            )
             extractor._save(split_data, filepath=filepath)
