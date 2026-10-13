@@ -51,12 +51,13 @@ accelerate estimate-memory "HuggingFace model path"
   --> Usergrid Project
 
 # TRAINING - EXAMPLE PROMPT [HOMEONE]:
-CUDA_VISIBLE_DEVICES=2 \
-  predict-complexity predict \
-    --train \
-    --train-data data/repositories/Apache/MESOS/mesos_dataset_train.json \
-    --val-data data/repositories/Apache/MESOS/mesos_dataset_val.json \
-    --model gpt2
+CUDA_VISIBLE_DEVICES=2 predict-complexity predict \
+  --train \
+  --train-data data/Apache/NEWMESOS/train.json \
+  --val-data data/Apache/NEWMESOS/test.json \
+  --model microsoft/codebert-base \
+  --seed 0
+
 
 # DATASET DOWNLOADING - EXAMPLE PROMPT:
 predict-complexity extract \

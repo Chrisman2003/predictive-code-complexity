@@ -65,7 +65,7 @@ class TransformerTrainer:
     
     The LR schedule is phase-aware: each phase gets its own warmup (warmup_ratio of the phase's steps); phase B then decays with a cosine over the steps that are actually 
     left. The best epoch (lowest validation loss) is restored into the model when training ends.
-    --> IMPORTANT: Phase B is only relevant given that one does not select: fully freezing the backbone
+    IMPORTANT: Phase B is only relevant given that one does not select: fully freezing the backbone
     """
     def __init__(
         self, 
@@ -163,8 +163,7 @@ class TransformerTrainer:
     def _lr_summary(self) -> Dict[str, float]:
         """Generates a snapshot of the current learning rates for telemetry logging.
 
-        Extracts the active learning rate for the classification head and the highest 
-        active learning rate across all backbone parameter groups at the current time step.
+        Extracts the active learning rate for the classification head and the highest active learning rate across all backbone parameter groups at the current time step.
 
         Returns:
             Dict[str, float]: A dictionary containing:
@@ -405,16 +404,11 @@ class TransformerTrainer:
 
     @staticmethod
     def run_training(
-        #self,
         model_name: str,
         num_classes: int,
         pooling: Optional[str],
         train_ds,
         val_ds,
-        base_lr: float,
-        head_lr: float,
-        llrd_decay: float,
-        weight_decay: float,
         dropout: float,
         mlp_head_width: int,
         batch_size: int,

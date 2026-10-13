@@ -28,8 +28,17 @@ class StoryPointDataset(Dataset):
         return len(self.user_stories)
 
     def _to_ordinal_target(self, rank: int) -> torch.Tensor:
-        # Convert rank K to (num_classes - 1) binary targets
-        # E.g., for 7 classes, rank 3 -> [1, 1, 1, 0, 0, 0]
+        """Converts an integer class rank into an extended binary ordinal target vector.
+
+        Generates a 1D tensor of size (K-1) where K is the total number of classes. For a given rank R, the first R elements are 1.0, and the remaining elements 
+        are 0.0. This format is required for computing the True CORAL loss.
+
+        Args:
+            rank (int): The 0-indexed ordinal rank of the target story point.
+
+        Returns:
+            torch.Tensor: A binary float32 tensor of shape (num_classes - 1). E.g., for 7 classes, rank 3 -> [1.0, 1.0, 1.0, 0.0, 0.0, 0.0].
+        """
         num_classes = len(self.scale)
         target = torch.zeros(num_classes - 1, dtype=torch.float32)
         if rank > 0:
@@ -64,10 +73,24 @@ class StoryPointDataset(Dataset):
 
 
 class OrdinalDataCollator:
+
+
     def __init__(self, tokenizer):
         self.padding_collator = DataCollatorWithPadding(tokenizer=tokenizer)
 
     def __call__(self, examples):
+        """Dynamically pads and batches a list of dataset examples.
+
+        Isolates the sequence inputs (`input_ids` and `attention_mask`) to utilize optimized Hugging Face dynamic padding, then manually stacks the custom 
+        regression targets since the standard collator ignores unrecognized keys.
+
+        Args:
+            examples (List[Dict[str, Any]]): A list of processed dataset instances returned by `StoryPointDataset.__getitem__`.
+
+        Returns:
+            Dict[str, torch.Tensor]: A batched dictionary where sequence inputs are padded to the maximum length present in the current batch, and all target 
+            values are stacked into contiguous PyTorch tensors.
+        """
         # 1. Extract only the model inputs.
         inputs = [
             {
