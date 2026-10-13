@@ -17,6 +17,9 @@ dependencies = [
     "torch>=2.0,<3.0",
 	"transformers>=4.30,<5.0",
 	"jupyter>=1.0",
+	"pydriller>=2.10",
+	"protobuf",
+	"sentencepiece",
 ]
 
 [project.optional-dependencies]

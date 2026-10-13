@@ -1,0 +1,35 @@
+{
+  "model_name": "sshleifer/tiny-gpt2",
+  "pooling": null,
+  "max_length": 256,
+  "scale": [
+    1.0,
+    2.0,
+    3.0,
+    5.0,
+    8.0,
+    13.0,
+    21.0
+  ],
+  "hyperparameters": {
+    "base_lr": 3e-05,
+    "head_lr": 0.001,
+    "llrd_decay": 0.9,
+    "weight_decay": 0.01,
+    "dropout": 0.2,
+    "mlp_head_width": 256,
+    "batch_size": 16,
+    "epochs": 20,
+    "patience": 8,
+    "freeze_epochs": 1,
+    "warmup_ratio": 0.1,
+    "seed": 0
+  },
+  "metrics": {
+    "best_val_loss": 2.260676386888603,
+    "val_mae": 1.5504587155963303,
+    "val_mae_rank": 0.9954128440366973,
+    "best_epoch": 19,
+    "run_dir": "binaries/runs/sshleifer-tiny-gpt2_2026-10-13_09.40.57_seed0"
+  }
+}
